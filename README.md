@@ -3,9 +3,10 @@
 ## TODO:
 
 - [x] Set up database and data model _(finished 10.04.2025)_
-- [ ] Move folder open state to URL
+- [x] Move folder open state to URL
 - [ ] Add ClerkAuth
 - [ ] Add file uploading
+- [ ] Add analytics (Posthog)
 
 ## Note from 10.04.2025
 
@@ -17,3 +18,9 @@ Just finished up connecting database, next steps:
 - [x] Push and make sure it all works
 
 **Done all TODOs ✅**
+
+## Note from 11.04.2025
+
+- [x] Change folders to link components, remove all client states
+- [ ] Clean up the database and data fetching patterns
+- [ ] Real homepage
