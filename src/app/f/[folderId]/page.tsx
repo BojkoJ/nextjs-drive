@@ -19,8 +19,8 @@ export default async function GoogleDriveClone(props: {
     return (
       <div className="flex h-screen w-full flex-col items-center justify-center gap-y-5 bg-gray-900 text-gray-50">
         <p>
-          <span className="font-semibold italic">Oooops... </span> You're
-          looking for a folder that doesn't exist or has been deleted.
+          <span className="font-semibold italic">Oooops... </span> You&apos;re
+          looking for a folder that doesn&apos;t exist or has been deleted.
         </p>
         <Link href="/f/1">
           <Button
