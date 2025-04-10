@@ -1,8 +1,8 @@
 import DriveContent from "~/components/drive-content";
 import { db } from "~/server/db";
 import {
-  files as filesSchema,
-  folders as foldersSchema,
+  files_table as filesSchema,
+  folders_table as foldersSchema,
 } from "~/server/db/schema";
 
 export default function GoogleDriveClone() {
