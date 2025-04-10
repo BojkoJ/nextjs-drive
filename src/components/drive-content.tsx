@@ -34,7 +34,7 @@ export default function DriveContent(props: {
   }, [currentFolder, props.folders]);
 
   const handleUpload = () => {
-    // TODO: Implement upload functionality here
+    // TODO: Implement upload functionality
   };
 
   return (
