@@ -1,66 +1,46 @@
-import { eq } from "drizzle-orm";
+import Link from "next/link";
 import DriveContent from "~/components/drive-content";
-import { db } from "~/server/db";
+import { Button } from "~/components/ui/button";
 import {
-  files_table as filesSchema,
-  folders_table as foldersSchema,
-} from "~/server/db/schema";
-
-// Funkce, která vrátí všechny rodiče složky (včetně samotné složky) - pro breadcrumb
-async function getAllParents(folderId: number) {
-  const parents = [];
-  let currentId: number | null = folderId;
-
-  while (currentId !== null) {
-    const folder = await db
-      .selectDistinct()
-      .from(foldersSchema)
-      .where(eq(foldersSchema.id, currentId));
-
-    if (!folder[0]) {
-      throw new Error("Folder not found");
-    }
-
-    // Abychom zajistili správné pořadí, místo push použijeme unshift, protože push přidává na konec pole
-    // Pole parents by pak bylo opačně než jak chceme (root by byl poslední místo první atd)
-    // Unshift přidá na začátek pole, takže pořadí bude správnéS
-    // Šlo by použít .reverse(), ale to je bad practice, protože to vytvoří nové pole a je to zbytečně náročné na výkon
-    parents.unshift(folder[0]);
-    currentId = folder[0]?.parent;
-  }
-
-  return parents;
-}
+  getAllParentsForFolder,
+  GetFiles,
+  GetFolders,
+} from "~/server/db/queries";
 
 export default async function GoogleDriveClone(props: {
   params: Promise<{ folderId: string }>;
 }) {
   // I když tady TS server ukazuje, že folderId je typu number, tak typeof folderId je string
   const params = await props.params;
+
+  // Zajistíme, že folderId je číslo, jinak vrátíme error page
   const parsedFolderId = parseInt(params.folderId);
   if (isNaN(parsedFolderId)) {
-    return <div>Invalid folder ID</div>;
+    return (
+      <div className="flex h-screen w-full flex-col items-center justify-center gap-y-5 bg-gray-900 text-gray-50">
+        <p>
+          <span className="font-semibold italic">Oooops... </span> You're
+          looking for a folder that doesn't exist or has been deleted.
+        </p>
+        <Link href="/f/1">
+          <Button
+            variant="ghost"
+            className="mr-2 cursor-pointer border border-gray-50 text-gray-300 hover:bg-gray-700 hover:text-white"
+          >
+            Go back
+          </Button>
+        </Link>
+      </div>
+    );
   }
 
-  // 1. Vytvoříme všechny Promisy co potřebujeme
-  const filesPromise = db
-    .select()
-    .from(filesSchema)
-    .where(eq(filesSchema.parent, parsedFolderId));
-
-  const foldersPromise = db
-    .select()
-    .from(foldersSchema)
-    .where(eq(foldersSchema.parent, parsedFolderId));
-
-  const parentsPromise = getAllParents(parsedFolderId);
-
-  // 2. Počkáme na všechny Promisy
-  // Toto zajistí, že získání folderů a souborů proběhne paralelně, což je rychlejší než čekat na každý dotaz zvlášť
+  // 2. Počkáme na všechny Promisy, které získáme z funkcí, které je vrací
+  // Toto zajistí, že získání folderů, souborů a parent-folderů proběhne paralelně,
+  // což je rychlejší než čekat na každý dotaz zvlášť, taky to dává větší smysl
   const [folders, files, parents] = await Promise.all([
-    foldersPromise,
-    filesPromise,
-    parentsPromise,
+    GetFolders(parsedFolderId),
+    GetFiles(parsedFolderId),
+    getAllParentsForFolder(parsedFolderId),
   ]);
 
   // 3. Až všechny Promisy skončí, tak je renderujeme komponentu DriveContent
