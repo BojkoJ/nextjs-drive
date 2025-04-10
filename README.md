@@ -2,7 +2,7 @@
 
 ## TODO:
 
-- [ ] Set up database and data model
+- [x] Set up database and data model _(finished 10.04.2025)_
 - [ ] Move folder open state to URL
 - [ ] Add ClerkAuth
 - [ ] Add file uploading
@@ -11,7 +11,9 @@
 
 Just finished up connecting database, next steps:
 
-- [ ] Update schema to show files and folders
-- [ ] Manually insert examples
-- [ ] Render them in the UI
-- [ ] Push and make sure it all works
+- [x] Update schema to show files and folders
+- [x] Manually insert examples
+- [x] Render them in the UI
+- [x] Push and make sure it all works
+
+**Done all TODOs ✅**
