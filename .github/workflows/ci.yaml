@@ -10,9 +10,9 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install Dependencies
-        uses: npm install -g pnpm && pnpm install
+        run: npm install -g pnpm && pnpm install
 
-      - name: Copy .env.example file
+      - name: Copy .env.example files
         shell: bash
         run: find . -type f -name ".env.example" -exec sh -c 'cp "$1" "${1%.*}"' _ {} \;
 
