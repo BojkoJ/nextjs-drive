@@ -1,6 +1,6 @@
 import "server-only"
 
-import { int, text, singlestoreTable, index, singlestoreTableCreator, bigint } from "drizzle-orm/singlestore-core";
+import { int, text, index, singlestoreTableCreator, bigint } from "drizzle-orm/singlestore-core";
 
 export const createTable = singlestoreTableCreator(
   (name) => `bojko_drive_${name}`,
