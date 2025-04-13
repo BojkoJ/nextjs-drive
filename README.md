@@ -22,5 +22,5 @@ Just finished up connecting database, next steps:
 ## Note from 11.04.2025
 
 - [x] Change folders to link components, remove all client states
-- [ ] Clean up the database and data fetching patterns
+- [x] Clean up the database and data fetching patterns
 - [ ] Real homepage
