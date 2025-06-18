@@ -1,12 +1,15 @@
 # Nextjs Google Drive Clone
 
-## TODO:
+## MAIN TODO:
 
 - [x] Set up database and data model _(finished 10.04.2025)_
 - [x] Move folder open state to URL
 - [x] Add ClerkAuth
 - [x] Add file uploading (only images for now)
-- [ ] Add analytics (Posthog)
+- [x] Add analytics (Posthog)
+- [ ] Make sure the sort order is consistent
+- [ ] 'Delete file' button
+- [ ] Real homepage + Onboarding
 
 ## Note from 10.04.2025
 
@@ -31,5 +34,3 @@ Just finished up connecting database, next steps:
 - [x] Add ownership to files and folders
 - [x] Upload files to the right folder
 - [x] Allow files that aren't images to be uploaded
-- [ ] Delete files button
-- [ ] Real homepage
