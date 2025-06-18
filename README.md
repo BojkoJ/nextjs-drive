@@ -8,8 +8,9 @@
 - [x] Add file uploading (only images for now)
 - [x] Add analytics (Posthog)
 - [x] Make sure the sort order is consistent
-- [ ] 'Delete file' button
+- [x] 'Delete file' button
 - [ ] Real homepage + Onboarding
+- [ ] Create & Delete folder - fetch all folders that have it as parent and their children too
 
 ## Note from 10.04.2025
 
