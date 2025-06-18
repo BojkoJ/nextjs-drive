@@ -35,9 +35,7 @@ export default function DriveContent(props: {
     return null;
   }
 
-  // if user isn't logged:
   if (userInfo.isSignedIn === false) {
-    // Show "Access Denied" page if not signed in
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-gray-900 text-gray-100">
         <div className="mb-4 text-6xl">
@@ -66,16 +64,11 @@ export default function DriveContent(props: {
     (parent) => parent.ownerId === userInfo.user?.id,
   );
 
-  // if user is logged in but tries to access folder/file that doesn't have his id as ownerId
-  // we can't check this by checking if userFiles or userFolders are empty becuase initially they are empty for new users
-
-  // check currentFolderId and see if it belongs to user
-  const currentFolder = userFolders.find(
-    (folder) => folder.id === props.currentFolderId,
-  );
+  const currentFolder =
+    userFolders.find((folder) => folder.id === props.currentFolderId) ??
+    userParents.find((parent) => parent.id === props.currentFolderId);
 
   if (!currentFolder) {
-    // If the current folder does not belong to the user, show "Access Denied" page
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-gray-900 text-gray-100">
         <div className="mb-4 text-6xl">
