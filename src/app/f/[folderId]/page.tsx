@@ -43,6 +43,6 @@ export default async function GoogleDriveClone(props: {
     getAllParentsForFolder(parsedFolderId),
   ]);
 
-  // 3. Až všechny Promisy skončí, tak je renderujeme komponentu DriveContent
+  // 3. Až všechny Promisy skončí, tak renderujeme komponentu DriveContent
   return <DriveContent files={files} folders={folders} parents={parents} />;
 }
