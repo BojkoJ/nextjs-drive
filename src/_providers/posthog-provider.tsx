@@ -14,7 +14,7 @@ const SuspendedPostHogPageView = dynamicLoader(
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    posthog.init(env.NEXT_PUBLIC_POSTHOG_KEY as string, {
+    posthog.init(String(env.NEXT_PUBLIC_POSTHOG_KEY ?? ""), {
       api_host: "/relay-iPtb",
       // api_host: (env.NEXT_PUBLIC_POSTHOG_HOST as string) ?? "https://us.i.posthog.com",
       ui_host: "https://us.posthog.com",
