@@ -5,7 +5,7 @@
 - [x] Set up database and data model _(finished 10.04.2025)_
 - [x] Move folder open state to URL
 - [x] Add ClerkAuth
-- [ ] Add file uploading
+- [x] Add file uploading (only images for now)
 - [ ] Add analytics (Posthog)
 
 ## Note from 10.04.2025
@@ -23,4 +23,10 @@ Just finished up connecting database, next steps:
 
 - [x] Change folders to link components, remove all client states
 - [x] Clean up the database and data fetching patterns
+
+## Note from 18.06.2025
+
 - [ ] Real homepage
+- [ ] Upload files to the right folder
+- [ ] Delete files button
+- [ ] Allow files that aren't images to be uploaded

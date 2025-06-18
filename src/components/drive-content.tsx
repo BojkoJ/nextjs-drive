@@ -6,15 +6,15 @@ import { FileRow, FolderRow } from "~/components/file-row";
 import type { files_table, folders_table } from "~/server/db/schema";
 import Link from "next/link";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+import { UploadButton } from "./uploadthing";
+import { useRouter } from "next/navigation";
 
 export default function DriveContent(props: {
   files: (typeof files_table.$inferSelect)[];
   folders: (typeof folders_table.$inferSelect)[];
   parents: (typeof folders_table.$inferSelect)[];
 }) {
-  //const handleUpload = () => {
-  // TODO: Implement upload functionality
-  //};
+  const router = useRouter();
 
   return (
     <div className="min-h-screen bg-gray-900 p-8 text-gray-100">
@@ -76,6 +76,12 @@ export default function DriveContent(props: {
             ))}
           </ul>
         </div>
+        <UploadButton
+          endpoint="imageUploader"
+          onClientUploadComplete={() => {
+            router.refresh();
+          }}
+        />
       </div>
     </div>
   );

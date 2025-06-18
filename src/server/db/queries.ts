@@ -1,4 +1,4 @@
-import "server-only"
+import "server-only";
 
 import { eq } from "drizzle-orm";
 import { db } from "~/server/db";
@@ -11,7 +11,7 @@ import {
 export async function getAllParentsForFolder(folderId: number) {
   const parents = [];
   let currentId: number | null = folderId;
- 
+
   while (currentId !== null) {
     const folder = await db
       .selectDistinct()
@@ -33,16 +33,13 @@ export async function getAllParentsForFolder(folderId: number) {
   return parents;
 }
 
-export function GetFolders (folderId: number) {
-  return db
-	.select()
-	.from(foldersSchema)
-	.where(eq(foldersSchema.parent, folderId));
-}
-
-export function GetFiles (folderId: number) {
+export function GetFolders(folderId: number) {
   return db
     .select()
-    .from(filesSchema)
-    .where(eq(filesSchema.parent, folderId));
+    .from(foldersSchema)
+    .where(eq(foldersSchema.parent, folderId));
+}
+
+export function GetFiles(folderId: number) {
+  return db.select().from(filesSchema).where(eq(filesSchema.parent, folderId));
 }
