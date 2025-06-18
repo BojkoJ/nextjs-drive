@@ -61,7 +61,7 @@ The CI/CD pipeline uses **GitHub Actions** and **Netlify CD** for the, ensuring 
 
 ### 🛠 **CI (Continuous Integration)**
 
-1. **Checkout kódu** – Loads the repository code into the GitHub Actions runner.
+1. **Checkout of the code** – Loads the repository code into the GitHub Actions runner.
 2. **Dependencies Install** – We use `pnpm` to install all necessary dependencies for the project.
 3. **Copy `.env` file** – Copies the `.env.example` to `.env` for the CI environment.
 4. **Typecheck** – Checks TypeScript types to ensure type safety across the codebase.
@@ -69,7 +69,7 @@ The CI/CD pipeline uses **GitHub Actions** and **Netlify CD** for the, ensuring 
 
 ### 🚀 **CD (Continuous Deployment)**
 
-Deployment is triggered automatically by Netlify when changes are pushed to the `main` branch. Netlify builds the project and deploys it to the live environment.
+Deployment is triggered automatically by Netlify when changes are pushed. Netlify builds the project and deploys it to the live environment.
 
 ## MAIN TODO:
 
