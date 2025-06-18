@@ -4,7 +4,7 @@
 
 - [x] Set up database and data model _(finished 10.04.2025)_
 - [x] Move folder open state to URL
-- [ ] Add ClerkAuth
+- [x] Add ClerkAuth
 - [ ] Add file uploading
 - [ ] Add analytics (Posthog)
 
