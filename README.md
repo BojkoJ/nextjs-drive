@@ -24,9 +24,12 @@ Just finished up connecting database, next steps:
 - [x] Change folders to link components, remove all client states
 - [x] Clean up the database and data fetching patterns
 
+**Done all TODOs ✅**
+
 ## Note from 18.06.2025
 
-- [ ] Real homepage
-- [ ] Upload files to the right folder
+- [x] Add ownership to files and folders
+- [x] Upload files to the right folder
 - [ ] Delete files button
 - [ ] Allow files that aren't images to be uploaded
+- [ ] Real homepage

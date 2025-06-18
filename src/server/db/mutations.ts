@@ -1,9 +1,19 @@
+import { eq } from "drizzle-orm";
 import "server-only";
 
 import { db } from "~/server/db";
 import { files_table as filesSchema } from "~/server/db/schema";
+import { folders_table as folderSchema } from "~/server/db/schema";
 
-// Omit nás nechá vybrat specifické klíče, které nebudou zahrnuty v typu
+export async function getFolderById(folderId: number) {
+  return await db
+    .select()
+    .from(folderSchema)
+    .where(eq(folderSchema.id, folderId))
+    .limit(1)
+    .then((res) => res[0]);
+}
+
 export async function createFile(input: {
   file: {
     name: string;
@@ -15,5 +25,5 @@ export async function createFile(input: {
 }) {
   return await db
     .insert(filesSchema)
-    .values({ ...input.file, parent: input.file.parent });
+    .values({ ...input.file, ownerId: input.userId });
 }
