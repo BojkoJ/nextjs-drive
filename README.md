@@ -30,6 +30,6 @@ Just finished up connecting database, next steps:
 
 - [x] Add ownership to files and folders
 - [x] Upload files to the right folder
+- [x] Allow files that aren't images to be uploaded
 - [ ] Delete files button
-- [ ] Allow files that aren't images to be uploaded
 - [ ] Real homepage

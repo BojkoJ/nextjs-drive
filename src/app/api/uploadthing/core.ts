@@ -9,15 +9,15 @@ const f = createUploadthing();
 // FileRouter pro naši aplikaci, může obsahovat více FileRoutes
 export const ourFileRouter = {
   // Můžeme definovat libovolný počet FileRoutes, každou s unikátním routeSlug
-  imageUploader: f({
+  driveUploader: f({
     // f je helper pro vytvoření FileRoute
-    image: {
+    blob: {
       /**
        * Pro kompletní seznam možností a výchozích hodnot, viz dokumentace File Route API
        * @see https://docs.uploadthing.com/file-routes#route-config
        */
-      maxFileSize: "4MB",
-      maxFileCount: 1,
+      maxFileSize: "128MB",
+      maxFileCount: 10,
     },
   })
     .input(
