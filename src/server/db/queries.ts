@@ -1,6 +1,6 @@
 import "server-only";
 
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "~/server/db";
 import {
   files_table as filesSchema,
@@ -31,6 +31,16 @@ export async function getAllParentsForFolder(folderId: number) {
   }
 
   return parents;
+}
+
+export async function GetRootFolderForUser(userId: string) {
+  const folder = await db
+    .select()
+    .from(foldersSchema)
+    .where(
+      and(eq(foldersSchema.ownerId, userId), isNull(foldersSchema.parent)),
+    );
+  return folder[0];
 }
 
 export function GetFolders(folderId: number) {

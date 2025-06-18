@@ -51,7 +51,7 @@ export default function HomePage() {
             type="submit"
             className="hover:shadow-3xl group transform cursor-pointer bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-4 text-lg text-white shadow-2xl transition-all duration-300 hover:scale-105 hover:from-blue-700 hover:to-purple-700"
           >
-            <SignInButton />
+            <SignInButton forceRedirectUrl={"/drive"} />
           </Button>
         </div>
       </section>
