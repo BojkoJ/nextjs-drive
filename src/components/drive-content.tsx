@@ -37,7 +37,7 @@ export default function DriveContent(props: {
 
   if (userInfo.isSignedIn === false) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-gray-900 text-gray-100">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-neutral-900 text-gray-100">
         <div className="mb-4 text-6xl">
           <span role="img" aria-label="Access Denied">
             😵‍💫
@@ -70,7 +70,7 @@ export default function DriveContent(props: {
 
   if (!currentFolder) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-gray-900 text-gray-100">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-neutral-900 text-gray-100">
         <div className="mb-4 text-6xl">
           <span role="img" aria-label="Access Denied">
             😵‍💫
@@ -81,14 +81,16 @@ export default function DriveContent(props: {
           You do not have permission to access this folder.
         </p>
         <Link href="/">
-          <Button className="cursor-pointer hover:bg-gray-600">Homepage</Button>
+          <Button className="cursor-pointer hover:bg-neutral-600">
+            Homepage
+          </Button>
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 p-8 text-gray-100">
+    <div className="min-h-screen bg-neutral-900 p-8 text-gray-100">
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center">
@@ -130,7 +132,7 @@ export default function DriveContent(props: {
             </SignedIn>
           </div>
         </div>
-        <div className="rounded-lg bg-gray-800 shadow-xl">
+        <div className="rounded-lg bg-neutral-800 shadow-xl">
           <div className="border-b border-gray-700 px-6 py-4">
             <div className="grid grid-cols-12 gap-4 text-sm font-medium text-gray-400">
               <div className="col-span-6">Name</div>

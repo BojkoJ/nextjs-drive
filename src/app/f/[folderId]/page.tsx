@@ -17,7 +17,7 @@ export default async function GoogleDriveClone(props: {
   const parsedFolderId = parseInt(params.folderId);
   if (isNaN(parsedFolderId)) {
     return (
-      <div className="flex h-screen w-full flex-col items-center justify-center gap-y-5 bg-gray-900 text-gray-50">
+      <div className="flex h-screen w-full flex-col items-center justify-center gap-y-5 bg-neutral-900 text-gray-50">
         <p>
           <span className="font-semibold italic">Oooops... </span> You&apos;re
           looking for a folder that doesn&apos;t exist or has been deleted.
@@ -25,7 +25,7 @@ export default async function GoogleDriveClone(props: {
         <Link href="/">
           <Button
             variant="ghost"
-            className="mr-2 cursor-pointer border border-gray-50 text-gray-300 hover:bg-gray-700 hover:text-white"
+            className="mr-2 cursor-pointer border border-gray-50 text-gray-300 hover:bg-neutral-700 hover:text-white"
           >
             Go back to Home
           </Button>
@@ -56,7 +56,7 @@ export default async function GoogleDriveClone(props: {
   } catch (err) {
     console.log(err);
     return (
-      <div className="flex h-screen w-full flex-col items-center justify-center gap-y-5 bg-gray-900 text-gray-50">
+      <div className="flex h-screen w-full flex-col items-center justify-center gap-y-5 bg-neutral-900 text-gray-50">
         <p>
           <span className="font-semibold italic">Oooops... </span> You&apos;re
           looking for a folder that doesn&apos;t exist or has been deleted.
@@ -64,7 +64,7 @@ export default async function GoogleDriveClone(props: {
         <Link href="/">
           <Button
             variant="ghost"
-            className="mr-2 cursor-pointer border border-gray-50 text-gray-300 hover:bg-gray-700 hover:text-white"
+            className="mr-2 cursor-pointer border border-gray-50 text-gray-300 hover:bg-neutral-700 hover:text-white"
           >
             Go back to Home
           </Button>

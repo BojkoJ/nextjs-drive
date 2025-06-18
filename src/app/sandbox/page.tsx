@@ -11,7 +11,7 @@ export default async function SandboxPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col items-center justify-center gap-4 bg-gray-900 text-gray-50">
+    <div className="flex h-screen flex-col items-center justify-center gap-4 bg-neutral-900 text-gray-50">
       Seed Function{" "}
       <form
         action={async () => {
@@ -43,7 +43,7 @@ export default async function SandboxPage() {
       >
         <button
           type="submit"
-          className="cursor-pointer rounded-lg border border-gray-50 px-4 py-2 transition-colors duration-200 hover:bg-gray-700"
+          className="cursor-pointer rounded-lg border border-gray-50 px-4 py-2 transition-colors duration-200 hover:bg-neutral-700"
         >
           Create Mock Folders
         </button>
