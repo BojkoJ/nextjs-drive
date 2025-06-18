@@ -2,12 +2,18 @@
 
 import Link from "next/link";
 
-import type { files_table, folders_table } from "~/server/db/schema";
+import { type files_table, type folders_table } from "~/server/db/schema";
 
 import { ChevronRight } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { FileRow, FolderRow } from "~/components/file-row";
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+import {
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  UserButton,
+  useUser,
+} from "@clerk/nextjs";
 import { UploadButton } from "./uploadthing";
 import { useRouter } from "next/navigation";
 
@@ -17,11 +23,76 @@ export default function DriveContent(props: {
   parents: (typeof folders_table.$inferSelect)[];
   currentFolderId: number;
 }) {
+  const userInfo = useUser();
+
   const router = useRouter();
 
   const rootFolderId = props.parents.find(
     (parent) => parent.name === "root",
   )?.id;
+
+  if (!userInfo.isLoaded) {
+    return null;
+  }
+
+  // if user isn't logged:
+  if (userInfo.isSignedIn === false) {
+    // Show "Access Denied" page if not signed in
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-gray-900 text-gray-100">
+        <div className="mb-4 text-6xl">
+          <span role="img" aria-label="Access Denied">
+            😵‍💫
+          </span>
+        </div>
+        <h1 className="mb-2 text-3xl font-bold">Access Denied</h1>
+        <p className="mb-6 text-lg text-gray-400">
+          You must be signed in to view this page.
+        </p>
+        <SignInButton mode="modal">
+          <Button>Sign In</Button>
+        </SignInButton>
+      </div>
+    );
+  }
+
+  const userFiles = props.files.filter(
+    (file) => file.ownerId === userInfo.user?.id,
+  );
+  const userFolders = props.folders.filter(
+    (folder) => folder.ownerId === userInfo.user?.id,
+  );
+  const userParents = props.parents.filter(
+    (parent) => parent.ownerId === userInfo.user?.id,
+  );
+
+  // if user is logged in but tries to access folder/file that doesn't have his id as ownerId
+  // we can't check this by checking if userFiles or userFolders are empty becuase initially they are empty for new users
+
+  // check currentFolderId and see if it belongs to user
+  const currentFolder = userFolders.find(
+    (folder) => folder.id === props.currentFolderId,
+  );
+
+  if (!currentFolder) {
+    // If the current folder does not belong to the user, show "Access Denied" page
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-gray-900 text-gray-100">
+        <div className="mb-4 text-6xl">
+          <span role="img" aria-label="Access Denied">
+            😵‍💫
+          </span>
+        </div>
+        <h1 className="mb-2 text-3xl font-bold">Access Denied</h1>
+        <p className="mb-6 text-lg text-gray-400">
+          You do not have permission to access this folder.
+        </p>
+        <Link href="/">
+          <Button className="cursor-pointer hover:bg-gray-600">Homepage</Button>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 p-8 text-gray-100">
@@ -37,7 +108,7 @@ export default function DriveContent(props: {
               </Button>
             </Link>
 
-            {props.parents.map((parentFolder) => {
+            {userParents.map((parentFolder) => {
               if (parentFolder.name === "root") {
                 return null; // Root folder přeskakujeme
               }
@@ -76,10 +147,10 @@ export default function DriveContent(props: {
             </div>
           </div>
           <ul>
-            {props.folders.map((folder) => (
+            {userFolders.map((folder) => (
               <FolderRow key={folder.id} folder={folder} />
             ))}
-            {props.files.map((file) => (
+            {userFiles.map((file) => (
               <FileRow key={file.id} file={file} />
             ))}
           </ul>

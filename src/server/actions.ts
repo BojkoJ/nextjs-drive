@@ -1,8 +1,8 @@
 "use server";
 
 import { and, eq } from "drizzle-orm";
-import { db } from ".";
-import { files_table } from "./schema";
+import { db } from "./db";
+import { files_table } from "./db/schema";
 import { auth } from "@clerk/nextjs/server";
 import { UTApi } from "uploadthing/server";
 import { cookies } from "next/headers";

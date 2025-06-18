@@ -9,8 +9,10 @@
 - [x] Add analytics (Posthog)
 - [x] Make sure the sort order is consistent
 - [x] 'Delete file' button
+- [x] Add ownership to folders, each user sees only his folders
 - [ ] Real homepage + Onboarding
-- [ ] Create & Delete folder - fetch all folders that have it as parent and their children too
+- [ ] Create folder
+- [ ] Delete folder - fetch all folders that have it as parent and their children too, then delete them all
 
 ## Note from 10.04.2025
 

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { FileIcon, Folder as FolderIcon, Trash2Icon } from "lucide-react";
 import type { files_table, folders_table } from "~/server/db/schema";
 import { Button } from "./ui/button";
-import { deleteFile } from "~/server/db/actions";
+import { deleteFile } from "~/server/actions";
 
 export function FileRow(props: { file: typeof files_table.$inferSelect }) {
   const { file } = props;
