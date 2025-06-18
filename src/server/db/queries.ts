@@ -37,9 +37,14 @@ export function GetFolders(folderId: number) {
   return db
     .select()
     .from(foldersSchema)
-    .where(eq(foldersSchema.parent, folderId));
+    .where(eq(foldersSchema.parent, folderId))
+    .orderBy(foldersSchema.id);
 }
 
 export function GetFiles(folderId: number) {
-  return db.select().from(filesSchema).where(eq(filesSchema.parent, folderId));
+  return db
+    .select()
+    .from(filesSchema)
+    .where(eq(filesSchema.parent, folderId))
+    .orderBy(filesSchema.id);
 }

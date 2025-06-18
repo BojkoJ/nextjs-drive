@@ -7,7 +7,7 @@
 - [x] Add ClerkAuth
 - [x] Add file uploading (only images for now)
 - [x] Add analytics (Posthog)
-- [ ] Make sure the sort order is consistent
+- [x] Make sure the sort order is consistent
 - [ ] 'Delete file' button
 - [ ] Real homepage + Onboarding
 

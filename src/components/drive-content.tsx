@@ -4,7 +4,7 @@ import Link from "next/link";
 
 import type { files_table, folders_table } from "~/server/db/schema";
 
-import { Slash } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { FileRow, FolderRow } from "~/components/file-row";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
@@ -19,12 +19,16 @@ export default function DriveContent(props: {
 }) {
   const router = useRouter();
 
+  const rootFolderId = props.parents.find(
+    (parent) => parent.name === "root",
+  )?.id;
+
   return (
     <div className="min-h-screen bg-gray-900 p-8 text-gray-100">
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center">
-            <Link href="/f/1">
+            <Link href={`/f/${rootFolderId}`}>
               <Button
                 variant="ghost"
                 className="mr-2 cursor-pointer text-gray-300 hover:text-white"
@@ -34,13 +38,13 @@ export default function DriveContent(props: {
             </Link>
 
             {props.parents.map((parentFolder) => {
-              if (parentFolder.name === "Root") {
+              if (parentFolder.name === "root") {
                 return null; // Root folder přeskakujeme
               }
 
               return (
                 <div key={parentFolder.id} className="flex items-center">
-                  <Slash className="mx-2 -rotate-45 text-gray-500" size={16} />
+                  <ChevronRight className="h-4 w-4 text-gray-500" />
                   <Link href={`/f/${parentFolder.id}`}>
                     <Button
                       variant="ghost"
