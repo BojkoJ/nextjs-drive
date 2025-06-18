@@ -1,6 +1,6 @@
 "use client";
 
-import { Upload, Slash } from "lucide-react";
+import { Slash } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { FileRow, FolderRow } from "~/components/file-row";
 import type { files_table, folders_table } from "~/server/db/schema";
@@ -12,9 +12,9 @@ export default function DriveContent(props: {
   folders: (typeof folders_table.$inferSelect)[];
   parents: (typeof folders_table.$inferSelect)[];
 }) {
-  const handleUpload = () => {
-    // TODO: Implement upload functionality
-  };
+  //const handleUpload = () => {
+  // TODO: Implement upload functionality
+  //};
 
   return (
     <div className="min-h-screen bg-gray-900 p-8 text-gray-100">
