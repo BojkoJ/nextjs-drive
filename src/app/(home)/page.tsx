@@ -1,68 +1,17 @@
+import Link from "next/link";
 import Image from "next/image";
 
 import { Button } from "~/components/ui/button";
 import { ArrowRight, CheckCircle } from "lucide-react";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { SignedIn, UserButton } from "@clerk/nextjs";
-import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-neutral-900">
+    <>
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 h-80 w-80 animate-pulse rounded-full bg-gradient-to-br from-neutral-700/20 to-neutral-600/20 blur-3xl"></div>
       </div>
-
-      <header className="relative z-10 border-b border-neutral-800 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4">
-          <nav className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Link href="/" className="flex items-center space-x-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-purple-600">
-                  <Image
-                    src="/favicon.ico"
-                    alt="Logo"
-                    width={32}
-                    height={32}
-                    className="h-5 w-5"
-                  />
-                </div>
-                <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-xl font-bold text-transparent">
-                  Bojko Drive
-                </span>
-              </Link>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <form
-                action={async () => {
-                  "use server";
-
-                  const session = await auth();
-
-                  if (!session.userId) {
-                    return redirect("/sign-in");
-                  }
-
-                  return redirect("/drive");
-                }}
-              >
-                <Button
-                  type="submit"
-                  className="transform cursor-pointer bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transition-all duration-300 hover:scale-105 hover:from-blue-700 hover:to-purple-700 hover:shadow-xl"
-                >
-                  Get Started
-                </Button>
-              </form>
-
-              <SignedIn>
-                <UserButton />
-              </SignedIn>
-            </div>
-          </nav>
-        </div>
-      </header>
 
       <section className="relative z-10 pt-30 md:pt-65">
         <div className="container mx-auto px-4 text-center">
@@ -121,6 +70,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-    </div>
+    </>
   );
 }

@@ -151,6 +151,7 @@ export default function DriveContent(props: {
           </ul>
         </div>
         <UploadButton
+          className="mt-10"
           endpoint="driveUploader"
           onClientUploadComplete={() => {
             router.refresh();
