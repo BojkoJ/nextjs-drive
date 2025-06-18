@@ -33,7 +33,6 @@ https://bojko-drive.netlify.app/
   - ESLint
   - Prettier
   - Tailwind CSS IntelliSense
-  - Python
 
 #### Handy Commands:
 
@@ -58,12 +57,12 @@ https://bojko-drive.netlify.app/
 
 ## CI/CD Pipeline:
 
-My CI/CD pipeline uses **GitHub Actions** for the, ensuring that code is automatically checked with deployment. The pipeline includes the following steps:
+The CI/CD pipeline uses **GitHub Actions** and **Netlify CD** for the, ensuring that code is automatically checked with deployment. The pipeline includes the following steps:
 
 ### 🛠 **CI (Continuous Integration)**
 
 1. **Checkout kódu** – Loads the repository code into the GitHub Actions runner.
-2. **Instalace závislostí** – We use `pnpm` to install all necessary dependencies for the project.
+2. **Dependencies Install** – We use `pnpm` to install all necessary dependencies for the project.
 3. **Copy `.env` file** – Copies the `.env.example` to `.env` for the CI environment.
 4. **Typecheck** – Checks TypeScript types to ensure type safety across the codebase.
 5. **Lint** – Runs ESLint to check for code quality and style issues.
