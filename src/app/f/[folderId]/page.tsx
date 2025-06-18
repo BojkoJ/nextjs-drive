@@ -1,5 +1,6 @@
 import Link from "next/link";
 import DriveContent from "~/components/drive-content";
+
 import { Button } from "~/components/ui/button";
 import {
   getAllParentsForFolder,
@@ -10,7 +11,6 @@ import {
 export default async function GoogleDriveClone(props: {
   params: Promise<{ folderId: string }>;
 }) {
-  // I když tady TS server ukazuje, že folderId je typu number, tak typeof folderId je string
   const params = await props.params;
 
   // Zajistíme, že folderId je číslo, jinak vrátíme error page

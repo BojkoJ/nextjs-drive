@@ -1,10 +1,12 @@
 "use client";
 
+import Link from "next/link";
+
+import type { files_table, folders_table } from "~/server/db/schema";
+
 import { Slash } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { FileRow, FolderRow } from "~/components/file-row";
-import type { files_table, folders_table } from "~/server/db/schema";
-import Link from "next/link";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { UploadButton } from "./uploadthing";
 import { useRouter } from "next/navigation";

@@ -13,6 +13,25 @@ const config = {
   typescript: {
     ignoreBuildErrors: true,
   },
+
+  async rewrites() {
+    return [
+      {
+        source: "/relay-iPtb/static/:path*",
+        destination: "https://us-assets.i.posthog.com/static/:path*",
+      },
+      {
+        source: "/relay-iPtb/:path*",
+        destination: "https://us.i.posthog.com/:path*",
+      },
+      {
+        source: "/relay-iPtb/flags",
+        destination: "https://us.i.posthog.com/flags",
+      },
+    ];
+  },
+  // Toto je nutné pro podporu API požadavků PostHog s koncovým lomítkem
+  skipTrailingSlashRedirect: true,
 };
 
 export default config;
