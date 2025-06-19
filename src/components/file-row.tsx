@@ -166,7 +166,7 @@ export function FolderRow(props: {
                 value={folderName}
                 onChange={(e) => setFolderName(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="flex-1 rounded border border-neutral-600 bg-neutral-700 px-2 py-1 text-gray-100 focus:border-neutral-500 focus:outline-none"
+                className="w-2/3 rounded border border-neutral-600 bg-neutral-700 px-2 py-1 text-gray-100 focus:border-neutral-500 focus:outline-none"
               />
               <div className="ml-2 flex gap-1">
                 {" "}
@@ -174,7 +174,7 @@ export function FolderRow(props: {
                   variant="ghost"
                   size="sm"
                   onClick={() => void handleSave()}
-                  className="h-6 w-6 p-0 hover:bg-green-600"
+                  className="h-6 w-6 cursor-pointer p-0 hover:bg-green-600"
                 >
                   <CheckIcon size={14} />
                 </Button>
@@ -182,7 +182,7 @@ export function FolderRow(props: {
                   variant="ghost"
                   size="sm"
                   onClick={handleCancel}
-                  className="h-6 w-6 p-0 hover:bg-red-600"
+                  className="h-6 w-6 cursor-pointer p-0 hover:bg-red-600"
                 >
                   <XIcon size={14} />
                 </Button>
