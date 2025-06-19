@@ -82,7 +82,8 @@ Deployment is triggered automatically by Netlify when changes are pushed. Netlif
 - [x] 'Delete file' button
 - [x] Add ownership to folders, each user sees only his folders
 - [x] Real homepage + Onboarding
-- [ ] Create folder - server action that takes a name and parentId, and creates a folder with that name and parentId (don't forget to set ownerId)
+- [x] Create folder
+- [x] Rename folder after creating
 - [ ] Delete folder - fetch all folders that have it as parent and their children too, then delete them all
 - [ ] Make a "file view" page
 - [ ] Toasts after file upload, Loading states, better UX
