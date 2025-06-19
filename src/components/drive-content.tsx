@@ -17,6 +17,7 @@ import {
 import { UploadButton } from "./uploadthing";
 import { useRouter } from "next/navigation";
 import { CreateFolder } from "~/server/actions";
+import { useState } from "react";
 
 export default function DriveContent(props: {
   files: (typeof files_table.$inferSelect)[];
@@ -25,8 +26,8 @@ export default function DriveContent(props: {
   currentFolderId: number;
 }) {
   const userInfo = useUser();
-
   const router = useRouter();
+  const [editingFolderId, setEditingFolderId] = useState<number | null>(null);
 
   const rootFolderId = props.parents.find(
     (parent) => parent.name === "root",
@@ -145,11 +146,14 @@ export default function DriveContent(props: {
             </div>
           </div>
           <ul>
+            {" "}
             {userFolders.map((folder, index) => (
               <FolderRow
                 key={folder.id}
                 folder={folder}
                 last={index === userFolders.length - 1}
+                isEditing={editingFolderId === folder.id}
+                onEditComplete={() => setEditingFolderId(null)}
               />
             ))}
             {userFiles.map((file, index) => (
@@ -160,12 +164,21 @@ export default function DriveContent(props: {
               />
             ))}
           </ul>
-        </div>
+        </div>{" "}
         <Button
           variant="ghost"
           className="mt-5 cursor-pointer hover:text-gray-100"
           aria-label="Create folder"
-          onClick={() => CreateFolder("New Folder", props.currentFolderId)}
+          onClick={async () => {
+            const result = await CreateFolder(
+              "New Folder",
+              props.currentFolderId,
+            );
+            if (result.success && result.folderId) {
+              setEditingFolderId(result.folderId);
+              router.refresh();
+            }
+          }}
         >
           <PlusIcon className="mr-1.5" size={20} /> Folder
         </Button>

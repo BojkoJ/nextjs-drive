@@ -11,10 +11,13 @@ import {
   MusicIcon,
   PresentationIcon,
   Trash2Icon,
+  CheckIcon,
+  XIcon,
 } from "lucide-react";
 import type { files_table, folders_table } from "~/server/db/schema";
 import { Button } from "./ui/button";
-import { DeleteFile } from "~/server/actions";
+import { DeleteFile, RenameFolder } from "~/server/actions";
+import { useState, useEffect, useRef } from "react";
 
 export function FileRow(props: {
   file: typeof files_table.$inferSelect;
@@ -89,24 +92,111 @@ export function FileRow(props: {
 
 export function FolderRow(props: {
   folder: typeof folders_table.$inferSelect;
-  last?: boolean; // default false
+  last?: boolean;
+  isEditing?: boolean;
+  onEditComplete?: () => void;
 }) {
-  const { folder, last = false } = props;
+  const { folder, last = false, isEditing = false, onEditComplete } = props;
+  const [isEditMode, setIsEditMode] = useState(isEditing);
+  const [folderName, setFolderName] = useState(folder.name);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isEditing) {
+      setIsEditMode(true);
+      setFolderName(folder.name);
+    }
+  }, [isEditing, folder.name]);
+
+  useEffect(() => {
+    if (isEditMode && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditMode]);
+
+  const handleSave = async () => {
+    if (folderName.trim() === "") {
+      setFolderName(folder.name);
+      return;
+    }
+
+    try {
+      const result = await RenameFolder(folder.id, folderName.trim());
+      if (result.error) {
+        console.error("Failed to rename folder:", result.error);
+        setFolderName(folder.name); // Revert to original name
+      }
+    } catch (error) {
+      console.error("Error renaming folder:", error);
+      setFolderName(folder.name); // Revert to original name
+    }
+
+    setIsEditMode(false);
+    onEditComplete?.();
+  };
+
+  const handleCancel = () => {
+    setFolderName(folder.name);
+    setIsEditMode(false);
+    onEditComplete?.();
+  };
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      void handleSave();
+    } else if (e.key === "Escape") {
+      handleCancel();
+    }
+  };
 
   return (
     <li
       key={folder.id}
       className={`hover:bg-neutral-750 px-6 py-4 ${last ? "" : "border-b border-gray-700"}`}
     >
+      {" "}
       <div className="grid grid-cols-12 items-center gap-4">
         <div className="col-span-6 flex items-center">
-          <Link
-            href={`/f/${folder.id}`}
-            className="flex cursor-pointer items-center text-gray-100 hover:text-neutral-500"
-          >
-            <FolderIcon className="mr-3" size={20} />
-            {folder.name}
-          </Link>
+          {isEditMode ? (
+            <div className="flex w-full items-center">
+              <FolderIcon className="mr-3" size={20} />
+              <input
+                ref={inputRef}
+                type="text"
+                value={folderName}
+                onChange={(e) => setFolderName(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="flex-1 rounded border border-neutral-600 bg-neutral-700 px-2 py-1 text-gray-100 focus:border-neutral-500 focus:outline-none"
+              />
+              <div className="ml-2 flex gap-1">
+                {" "}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void handleSave()}
+                  className="h-6 w-6 p-0 hover:bg-green-600"
+                >
+                  <CheckIcon size={14} />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCancel}
+                  className="h-6 w-6 p-0 hover:bg-red-600"
+                >
+                  <XIcon size={14} />
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Link
+              href={`/f/${folder.id}`}
+              className="flex cursor-pointer items-center text-gray-100 hover:text-neutral-500"
+            >
+              <FolderIcon className="mr-3" size={20} />
+              {folder.name}
+            </Link>
+          )}
         </div>
         <div className="col-span-3 text-gray-400">Folder</div>
         <div className="col-span-3 text-gray-400"></div>
