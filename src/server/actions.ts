@@ -55,7 +55,7 @@ export async function CreateFolder(name: string, parentId: number) {
 
   const newFolder = {
     name,
-    parentId: parentId,
+    parent: parentId,
     ownerId: session.userId,
   }
 
