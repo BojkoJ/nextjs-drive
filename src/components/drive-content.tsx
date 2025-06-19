@@ -4,7 +4,7 @@ import Link from "next/link";
 
 import { type files_table, type folders_table } from "~/server/db/schema";
 
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, PlusIcon } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { FileRow, FolderRow } from "~/components/file-row";
 import {
@@ -16,6 +16,7 @@ import {
 } from "@clerk/nextjs";
 import { UploadButton } from "./uploadthing";
 import { useRouter } from "next/navigation";
+import { CreateFolder } from "~/server/actions";
 
 export default function DriveContent(props: {
   files: (typeof files_table.$inferSelect)[];
@@ -133,7 +134,9 @@ export default function DriveContent(props: {
           </div>
         </div>
         <div className="rounded-lg bg-neutral-800 shadow-xl">
-          <div className="border-b border-gray-700 px-6 py-4">
+          <div
+            className={`px-6 py-4 ${userFolders.length <= 0 && userFiles.length <= 0 ? "" : "border-b border-gray-700"}`}
+          >
             <div className="grid grid-cols-12 gap-4 text-sm font-medium text-gray-400">
               <div className="col-span-6">Name</div>
               <div className="col-span-3">Type</div>
@@ -142,14 +145,30 @@ export default function DriveContent(props: {
             </div>
           </div>
           <ul>
-            {userFolders.map((folder) => (
-              <FolderRow key={folder.id} folder={folder} />
+            {userFolders.map((folder, index) => (
+              <FolderRow
+                key={folder.id}
+                folder={folder}
+                last={index === userFolders.length - 1}
+              />
             ))}
-            {userFiles.map((file) => (
-              <FileRow key={file.id} file={file} />
+            {userFiles.map((file, index) => (
+              <FileRow
+                key={file.id}
+                file={file}
+                last={index === userFiles.length - 1}
+              />
             ))}
           </ul>
         </div>
+        <Button
+          variant="ghost"
+          className="mt-5 cursor-pointer hover:text-gray-100"
+          aria-label="Create folder"
+          onClick={() => CreateFolder("New Folder", props.currentFolderId)}
+        >
+          <PlusIcon className="mr-1.5" size={20} /> Folder
+        </Button>
         <UploadButton
           className="mt-10"
           endpoint="driveUploader"
