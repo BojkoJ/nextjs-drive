@@ -57,7 +57,7 @@ https://bojko-drive.netlify.app/
 
 ## CI/CD Pipeline:
 
-The CI/CD pipeline uses **GitHub Actions** and **Netlify CD** for the, ensuring that code is automatically checked with deployment. The pipeline includes the following steps:
+The CI/CD pipeline uses **GitHub Actions** and **Netlify CD**, ensuring that code is automatically checked, linted, correctly built and deployed. The pipeline includes the following steps:
 
 ### 🛠 **CI (Continuous Integration)**
 
