@@ -28,13 +28,13 @@ export function FileRow(props: {
   return (
     <li
       key={file.id}
-      className={`hover:bg-neutral-750 px-6 py-4 ${last ? "" : "border-b border-neutral-700"}`}
+      className={`px-6 py-4 font-mono text-sm hover:bg-accent/50 ${last ? "" : "border-b border-border"}`}
     >
       <div className="grid grid-cols-12 items-center gap-4">
         <div className="col-span-6 flex items-center">
           <Link
             href={file.url}
-            className="flex items-center text-gray-100 hover:text-neutral-500"
+            className="flex items-center text-foreground hover:text-primary"
             target="_blank" // Otevře v novém tabu - vhodné pro drive klon - když klikneme na file tak je vhodné aby se otevřel v novém tabu
           >
             {file.name.includes(".png") ||
@@ -42,43 +42,43 @@ export function FileRow(props: {
             file.name.includes(".jpeg") ||
             file.name.includes(".gif") ||
             file.name.includes(".webp") ? (
-              <ImageIcon className="mr-3" size={20} />
+              <ImageIcon className="mr-3 text-primary" size={20} />
             ) : file.name.includes(".ppt") || file.name.includes(".pptx") ? (
-              <PresentationIcon className="mr-3" size={20} />
+              <PresentationIcon className="mr-3 text-primary" size={20} />
             ) : file.name.includes(".xls") || file.name.includes(".xlsx") ? (
-              <FileSpreadsheetIcon className="mr-3" size={20} />
+              <FileSpreadsheetIcon className="mr-3 text-primary" size={20} />
             ) : file.name.includes(".txt") ||
               file.name.includes(".doc") ||
               file.name.includes(".docx") ||
               file.name.includes(".pdf") ? (
-              <FileTextIcon className="mr-3" size={20} />
+              <FileTextIcon className="mr-3 text-primary" size={20} />
             ) : file.name.includes(".zip") ||
               file.name.includes(".rar") ||
               file.name.includes(".7z") ? (
-              <FolderArchiveIcon className="mr-3" size={20} />
+              <FolderArchiveIcon className="mr-3 text-primary" size={20} />
             ) : file.name.includes(".mp4") ||
               file.name.includes(".avi") ||
               file.name.includes(".mov") ||
               file.name.includes(".mkv") ? (
-              <FileVideoIcon className="mr-3" size={20} />
+              <FileVideoIcon className="mr-3 text-primary" size={20} />
             ) : file.name.includes(".mp3") ||
               file.name.includes(".wav") ||
               file.name.includes(".flac") ? (
-              <MusicIcon className="mr-3" size={20} />
+              <MusicIcon className="mr-3 text-primary" size={20} />
             ) : (
-              <FileIcon className="mr-3" size={20} />
+              <FileIcon className="mr-3 text-primary" size={20} />
             )}
             {file.name}
           </Link>
         </div>
-        <div className="col-span-3 text-gray-400">{"File"}</div>
-        <div className="col-span-2 text-gray-400">
+        <div className="col-span-3 text-muted-foreground">{"File"}</div>
+        <div className="col-span-2 text-muted-foreground">
           {Math.ceil(file.size / 1024)} KB
         </div>
-        <div className="col-span-1 text-gray-400">
+        <div className="col-span-1 text-muted-foreground">
           <Button
             variant="ghost"
-            className="cursor-pointer hover:bg-neutral-600"
+            className="cursor-pointer hover:bg-destructive/10 hover:text-destructive"
             onClick={() => DeleteFile(file.id)}
             aria-label="Delete file"
           >
@@ -101,12 +101,16 @@ export function FolderRow(props: {
   const [folderName, setFolderName] = useState(folder.name);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
+  const [prevIsEditing, setPrevIsEditing] = useState(isEditing);
+  const [prevFolderNameProp, setPrevFolderNameProp] = useState(folder.name);
+  if (isEditing !== prevIsEditing || folder.name !== prevFolderNameProp) {
+    setPrevIsEditing(isEditing);
+    setPrevFolderNameProp(folder.name);
     if (isEditing) {
       setIsEditMode(true);
       setFolderName(folder.name);
     }
-  }, [isEditing, folder.name]);
+  }
 
   useEffect(() => {
     if (isEditMode && inputRef.current) {
@@ -152,29 +156,27 @@ export function FolderRow(props: {
   return (
     <li
       key={folder.id}
-      className={`hover:bg-neutral-750 px-6 py-4 ${last ? "" : "border-b border-gray-700"}`}
+      className={`px-6 py-4 font-mono text-sm hover:bg-accent/50 ${last ? "" : "border-b border-border"}`}
     >
-      {" "}
       <div className="grid grid-cols-12 items-center gap-4">
         <div className="col-span-6 flex items-center">
           {isEditMode ? (
             <div className="flex w-full items-center">
-              <FolderIcon className="mr-3" size={20} />
+              <FolderIcon className="mr-3 text-amber-400" size={20} />
               <input
                 ref={inputRef}
                 type="text"
                 value={folderName}
                 onChange={(e) => setFolderName(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="w-2/3 rounded border border-neutral-600 bg-neutral-700 px-2 py-1 text-gray-100 focus:border-neutral-500 focus:outline-none"
+                className="w-2/3 border border-border bg-input px-2 py-1 font-mono text-foreground focus:border-primary focus:outline-none"
               />
               <div className="ml-2 flex gap-1">
-                {" "}
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => void handleSave()}
-                  className="h-6 w-6 cursor-pointer p-0 hover:bg-green-600"
+                  className="h-6 w-6 cursor-pointer p-0 hover:bg-primary/20 hover:text-primary"
                 >
                   <CheckIcon size={14} />
                 </Button>
@@ -182,7 +184,7 @@ export function FolderRow(props: {
                   variant="ghost"
                   size="sm"
                   onClick={handleCancel}
-                  className="h-6 w-6 cursor-pointer p-0 hover:bg-red-600"
+                  className="h-6 w-6 cursor-pointer p-0 hover:bg-destructive/10 hover:text-destructive"
                 >
                   <XIcon size={14} />
                 </Button>
@@ -191,15 +193,15 @@ export function FolderRow(props: {
           ) : (
             <Link
               href={`/f/${folder.id}`}
-              className="flex cursor-pointer items-center text-gray-100 hover:text-neutral-500"
+              className="flex cursor-pointer items-center text-foreground hover:text-primary"
             >
-              <FolderIcon className="mr-3" size={20} />
+              <FolderIcon className="mr-3 text-amber-400" size={20} />
               {folder.name}
             </Link>
           )}
         </div>
-        <div className="col-span-3 text-gray-400">Folder</div>
-        <div className="col-span-3 text-gray-400"></div>
+        <div className="col-span-3 text-muted-foreground">Folder</div>
+        <div className="col-span-3 text-muted-foreground"></div>
       </div>
     </li>
   );

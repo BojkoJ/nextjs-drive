@@ -17,7 +17,7 @@ export default async function GoogleDriveClone(props: {
   const parsedFolderId = parseInt(params.folderId);
   if (isNaN(parsedFolderId)) {
     return (
-      <div className="flex h-screen w-full flex-col items-center justify-center gap-y-5 bg-neutral-900 text-gray-50">
+      <div className="flex h-screen w-full flex-col items-center justify-center gap-y-5 bg-background text-foreground">
         <p>
           <span className="font-semibold italic">Oooops... </span> You&apos;re
           looking for a folder that doesn&apos;t exist or has been deleted.
@@ -25,7 +25,7 @@ export default async function GoogleDriveClone(props: {
         <Link href="/">
           <Button
             variant="ghost"
-            className="mr-2 cursor-pointer border border-gray-50 text-gray-300 hover:bg-neutral-700 hover:text-white"
+            className="mr-2 cursor-pointer border border-border text-muted-foreground hover:bg-accent hover:text-foreground"
           >
             Go back to Home
           </Button>
@@ -33,30 +33,27 @@ export default async function GoogleDriveClone(props: {
       </div>
     );
   }
+
+  // JSX must not be constructed inside the try block: rendering happens
+  // later (outside this function), so a try/catch here only guards the
+  // data fetching below, not the DriveContent render.
+  let folders: Awaited<ReturnType<typeof GetFolders>>;
+  let files: Awaited<ReturnType<typeof GetFiles>>;
+  let parents: Awaited<ReturnType<typeof getAllParentsForFolder>>;
 
   try {
     // 2. Počkáme na všechny Promisy, které získáme z funkcí, které je vrací
     // Toto zajistí, že získání folderů, souborů a parent-folderů proběhne paralelně,
     // což je rychlejší než čekat na každý dotaz zvlášť, taky to dává větší smysl
-    const [folders, files, parents] = await Promise.all([
+    [folders, files, parents] = await Promise.all([
       GetFolders(parsedFolderId),
       GetFiles(parsedFolderId),
       getAllParentsForFolder(parsedFolderId),
     ]);
-
-    // 3. Až všechny Promisy skončí, tak renderujeme komponentu DriveContent
-    return (
-      <DriveContent
-        files={files}
-        folders={folders}
-        parents={parents}
-        currentFolderId={parsedFolderId}
-      />
-    );
   } catch (err) {
     console.log(err);
     return (
-      <div className="flex h-screen w-full flex-col items-center justify-center gap-y-5 bg-neutral-900 text-gray-50">
+      <div className="flex h-screen w-full flex-col items-center justify-center gap-y-5 bg-background text-foreground">
         <p>
           <span className="font-semibold italic">Oooops... </span> You&apos;re
           looking for a folder that doesn&apos;t exist or has been deleted.
@@ -64,7 +61,7 @@ export default async function GoogleDriveClone(props: {
         <Link href="/">
           <Button
             variant="ghost"
-            className="mr-2 cursor-pointer border border-gray-50 text-gray-300 hover:bg-neutral-700 hover:text-white"
+            className="mr-2 cursor-pointer border border-border text-muted-foreground hover:bg-accent hover:text-foreground"
           >
             Go back to Home
           </Button>
@@ -72,4 +69,14 @@ export default async function GoogleDriveClone(props: {
       </div>
     );
   }
+
+  // 3. Až všechny Promisy skončí, tak renderujeme komponentu DriveContent
+  return (
+    <DriveContent
+      files={files}
+      folders={folders}
+      parents={parents}
+      currentFolderId={parsedFolderId}
+    />
+  );
 }

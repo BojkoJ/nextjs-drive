@@ -1,17 +1,34 @@
-import { FlatCompat } from "@eslint/eslintrc";
 import tseslint from "typescript-eslint";
 // @ts-ignore -- no types for this plugin
 import drizzle from "eslint-plugin-drizzle";
-
-const compat = new FlatCompat({
-  baseDirectory: import.meta.dirname,
-});
+import nextVitals from "eslint-config-next/core-web-vitals";
 
 export default tseslint.config(
   {
     ignores: [".next"],
   },
-  ...compat.extends("next/core-web-vitals"),
+  ...nextVitals,
+  {
+    // eslint-plugin-react's "detect" React version lookup calls the removed
+    // context.getFilename() API under ESLint 10, crashing every rule that
+    // needs the version. Setting an explicit version skips that lookup.
+    settings: {
+      react: {
+        version: "19",
+      },
+    },
+  },
+  {
+    // eslint-config-next routes plain JS files through Next's vendored Babel
+    // eslint parser, whose bundled scope manager predates the addGlobals()
+    // method ESLint 10 requires, crashing the linter on every such file.
+    // Route these files through the typescript-eslint parser instead, same
+    // as .ts/.tsx already get from eslint-config-next's own override below.
+    files: ["**/*.js", "**/*.mjs", "**/*.cjs"],
+    languageOptions: {
+      parser: tseslint.parser,
+    },
+  },
   {
     files: ["**/*.ts", "**/*.tsx"],
     plugins: {

@@ -11,7 +11,7 @@ const utApi = new UTApi();
 
 export async function DeleteFile(fileId: number) {
   const session = await auth();
-  if (!session || !session.userId) {
+  if (!session?.userId) {
     return { error: "Unauthorized" };
   }
 
@@ -49,7 +49,7 @@ export async function DeleteFile(fileId: number) {
 //server action that takes a name and parentId, and creates a folder with that name and parentId (don't forget to set ownerId)
 export async function CreateFolder(name: string, parentId: number) {
   const session = await auth();
-  if (!session || !session.userId) {
+  if (!session?.userId) {
     return { error: "Unauthorized" };
   }
 
@@ -87,7 +87,7 @@ export async function CreateFolder(name: string, parentId: number) {
 
 export async function RenameFolder(folderId: number, newName: string) {
   const session = await auth();
-  if (!session || !session.userId) {
+  if (!session?.userId) {
     return { error: "Unauthorized" };
   }
 

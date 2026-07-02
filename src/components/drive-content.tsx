@@ -7,13 +7,7 @@ import { type files_table, type folders_table } from "~/server/db/schema";
 import { ChevronRight, PlusIcon } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { FileRow, FolderRow } from "~/components/file-row";
-import {
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  UserButton,
-  useUser,
-} from "@clerk/nextjs";
+import { Show, SignInButton, UserButton, useUser } from "@clerk/nextjs";
 import { UploadButton } from "./uploadthing";
 import { useRouter } from "next/navigation";
 import { CreateFolder } from "~/server/actions";
@@ -39,18 +33,23 @@ export default function DriveContent(props: {
 
   if (userInfo.isSignedIn === false) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-neutral-900 text-gray-100">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
         <div className="mb-4 text-6xl">
           <span role="img" aria-label="Access Denied">
             😵‍💫
           </span>
         </div>
-        <h1 className="mb-2 text-3xl font-bold">Access Denied</h1>
-        <p className="mb-6 text-lg text-gray-400">
+        <h1 className="mb-2 text-3xl font-bold uppercase">Access Denied</h1>
+        <p className="mb-6 text-lg text-muted-foreground">
           You must be signed in to view this page.
         </p>
         <SignInButton mode="modal">
-          <Button>Sign In</Button>
+          <Button
+            variant="outline"
+            className="cursor-pointer rounded-none border-2 border-primary bg-transparent px-6 text-primary uppercase hover:bg-primary hover:text-primary-foreground"
+          >
+            Sign In
+          </Button>
         </SignInButton>
       </div>
     );
@@ -72,18 +71,21 @@ export default function DriveContent(props: {
 
   if (!currentFolder) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-neutral-900 text-gray-100">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
         <div className="mb-4 text-6xl">
           <span role="img" aria-label="Access Denied">
             😵‍💫
           </span>
         </div>
-        <h1 className="mb-2 text-3xl font-bold">Access Denied</h1>
-        <p className="mb-6 text-lg text-gray-400">
+        <h1 className="mb-2 text-3xl font-bold uppercase">Access Denied</h1>
+        <p className="mb-6 text-lg text-muted-foreground">
           You do not have permission to access this folder.
         </p>
         <Link href="/">
-          <Button className="cursor-pointer hover:bg-neutral-600">
+          <Button
+            variant="outline"
+            className="cursor-pointer rounded-none border-2 border-primary bg-transparent px-6 text-primary uppercase hover:bg-primary hover:text-primary-foreground"
+          >
             Homepage
           </Button>
         </Link>
@@ -92,14 +94,14 @@ export default function DriveContent(props: {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-900 p-8 text-gray-100">
+    <div className="min-h-screen bg-background p-8 text-foreground">
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center">
             <Link href={`/f/${rootFolderId}`}>
               <Button
                 variant="ghost"
-                className="mr-2 cursor-pointer text-gray-300 hover:text-white"
+                className="mr-2 cursor-pointer font-mono text-muted-foreground hover:text-foreground"
               >
                 My Drive
               </Button>
@@ -112,11 +114,11 @@ export default function DriveContent(props: {
 
               return (
                 <div key={parentFolder.id} className="flex items-center">
-                  <ChevronRight className="h-4 w-4 text-gray-500" />
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   <Link href={`/f/${parentFolder.id}`}>
                     <Button
                       variant="ghost"
-                      className="cursor-pointer text-gray-300 hover:text-white"
+                      className="cursor-pointer font-mono text-muted-foreground hover:text-foreground"
                     >
                       {parentFolder.name}
                     </Button>
@@ -126,48 +128,52 @@ export default function DriveContent(props: {
             })}
           </div>
           <div className="">
-            <SignedOut>
+            <Show when="signed-out">
               <SignInButton />
-            </SignedOut>
-            <SignedIn>
+            </Show>
+            <Show when="signed-in">
               <UserButton />
-            </SignedIn>
+            </Show>
           </div>
         </div>
-        <div className="rounded-lg bg-neutral-800 shadow-xl">
-          <div
-            className={`px-6 py-4 ${userFolders.length <= 0 && userFiles.length <= 0 ? "" : "border-b border-gray-700"}`}
-          >
-            <div className="grid grid-cols-12 gap-4 text-sm font-medium text-gray-400">
-              <div className="col-span-6">Name</div>
-              <div className="col-span-3">Type</div>
-              <div className="col-span-2">Size</div>
-              <div className="col-span-1"></div>
+
+        <div className="relative">
+          <div className="absolute inset-0 translate-x-2 translate-y-2 -rotate-1 border border-primary/30 bg-primary/5" />
+          <div className="relative border border-border bg-card">
+            <div
+              className={`px-6 py-4 ${userFolders.length <= 0 && userFiles.length <= 0 ? "" : "border-b border-border"}`}
+            >
+              <div className="grid grid-cols-12 gap-4 text-xs font-bold tracking-widest text-muted-foreground uppercase">
+                <div className="col-span-6">Name</div>
+                <div className="col-span-3">Type</div>
+                <div className="col-span-2">Size</div>
+                <div className="col-span-1"></div>
+              </div>
             </div>
+            <ul>
+              {userFolders.map((folder, index) => (
+                <FolderRow
+                  key={folder.id}
+                  folder={folder}
+                  last={index === userFolders.length - 1}
+                  isEditing={editingFolderId === folder.id}
+                  onEditComplete={() => setEditingFolderId(null)}
+                />
+              ))}
+              {userFiles.map((file, index) => (
+                <FileRow
+                  key={file.id}
+                  file={file}
+                  last={index === userFiles.length - 1}
+                />
+              ))}
+            </ul>
           </div>
-          <ul>
-            {" "}
-            {userFolders.map((folder, index) => (
-              <FolderRow
-                key={folder.id}
-                folder={folder}
-                last={index === userFolders.length - 1}
-                isEditing={editingFolderId === folder.id}
-                onEditComplete={() => setEditingFolderId(null)}
-              />
-            ))}
-            {userFiles.map((file, index) => (
-              <FileRow
-                key={file.id}
-                file={file}
-                last={index === userFiles.length - 1}
-              />
-            ))}
-          </ul>
-        </div>{" "}
+        </div>
+
         <Button
-          variant="ghost"
-          className="mt-5 cursor-pointer hover:text-gray-100"
+          variant="outline"
+          className="mt-6 cursor-pointer rounded-none border-2 border-primary bg-transparent text-xs font-bold tracking-wide text-primary uppercase hover:bg-primary hover:text-primary-foreground"
           aria-label="Create folder"
           onClick={async () => {
             const result = await CreateFolder(
@@ -180,7 +186,7 @@ export default function DriveContent(props: {
             }
           }}
         >
-          <PlusIcon className="mr-1.5" size={20} /> Folder
+          <PlusIcon className="mr-1.5" size={16} /> Folder
         </Button>
         <UploadButton
           className="mt-10"

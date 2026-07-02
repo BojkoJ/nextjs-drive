@@ -15,41 +15,41 @@ export default async function DrivePage() {
 
   if (!rootFolder) {
     return (
-      <div className="min-h-screen bg-neutral-900">
-        {/* Hero Section */}
-        <section className="relative z-10 pt-30 md:pt-65">
-          <div className="container mx-auto px-4 text-center">
-            <h1 className="mb-6 text-4xl font-bold text-white">
-              Welcome to Bojko Drive
-            </h1>
-            <h3 className="mb-14 text-2xl font-semibold text-gray-300">
-              First things first - you need to create your base folders.
-            </h3>
-            <form
-              action={async () => {
-                "use server";
-                const session = await auth();
+      <section className="flex min-h-[70vh] flex-col items-center justify-center px-4 text-center">
+        <span className="mb-6 -rotate-2 border-2 border-primary bg-primary px-2.5 py-1 text-xs font-black tracking-wider text-primary-foreground uppercase">
+          One time setup
+        </span>
+        <h1 className="max-w-lg text-3xl font-black tracking-tight text-foreground uppercase md:text-4xl">
+          Welcome. Let&apos;s create your base folders.
+        </h1>
+        <p className="mt-4 max-w-md text-muted-foreground">
+          Takes one click. You will get Documents, Photos and Videos folders
+          to start with.
+        </p>
+        <form
+          className="mt-10"
+          action={async () => {
+            "use server";
+            const session = await auth();
 
-                if (!session.userId) {
-                  return redirect("/sign-in");
-                }
+            if (!session.userId) {
+              return redirect("/sign-in");
+            }
 
-                const rootFolderId = await OnboardUser(session.userId);
+            const rootFolderId = await OnboardUser(session.userId);
 
-                return redirect(`/f/${rootFolderId}`);
-              }}
-            >
-              <Button
-                size="lg"
-                className="hover:shadow-3xl group transform cursor-pointer bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-4 text-lg text-white shadow-2xl transition-all duration-300 hover:scale-105 hover:from-blue-700 hover:to-purple-700"
-                type="submit"
-              >
-                Create Base Folders
-              </Button>
-            </form>
-          </div>
-        </section>
-      </div>
+            return redirect(`/f/${rootFolderId}`);
+          }}
+        >
+          <Button
+            size="lg"
+            className="cursor-pointer rounded-none border-2 border-primary bg-transparent px-8 py-6 text-base font-bold tracking-wide text-primary uppercase hover:bg-primary hover:text-primary-foreground"
+            type="submit"
+          >
+            Create base folders
+          </Button>
+        </form>
+      </section>
     );
   }
 
