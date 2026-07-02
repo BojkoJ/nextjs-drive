@@ -7,21 +7,19 @@ export default function HomePage() {
   return (
     <section className="px-4 py-24 md:py-36">
       <div className="mx-auto max-w-4xl">
-        <span className="mb-8 inline-block -rotate-2 border-2 border-primary bg-primary px-2.5 py-1 text-xs font-black tracking-wider text-primary-foreground uppercase">
-          Solo built. No VC money.
-        </span>
-
-        <h1 className="max-w-2xl text-5xl leading-[0.95] font-black tracking-tight text-foreground uppercase md:text-7xl">
+        <h1 className="text-foreground max-w-2xl text-5xl leading-[0.95] font-black tracking-tight uppercase md:text-7xl">
           Store stuff.
           <br />
           Find it <span className="text-primary">again.</span>
         </h1>
 
-        <div className="mt-6 mb-10 h-[5px] w-24 bg-primary [clip-path:polygon(0_0,100%_10%,98%_100%,2%_90%)]" />
+        <div className="bg-primary mt-6 mb-10 h-1.25 w-24 [clip-path:polygon(0_0,100%_10%,98%_100%,2%_90%)]" />
 
-        <p className="max-w-xl text-lg leading-relaxed text-muted-foreground">
+        <p className="text-muted-foreground max-w-xl text-lg leading-relaxed">
           A plain, honest drive for the files that actually matter to you.
-          Upload, organize, done. Nothing else fighting for your attention.
+          <br />
+          Upload, organize, enjoy calm UI, done. <br />
+          Nothing else fighting for your attention.
         </p>
 
         <div className="mt-10">
@@ -41,7 +39,7 @@ export default function HomePage() {
             <Button
               size="lg"
               type="submit"
-              className="cursor-pointer gap-2 rounded-none border-2 border-primary bg-transparent px-8 py-6 text-base font-bold tracking-wide text-primary uppercase hover:bg-primary hover:text-primary-foreground"
+              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground cursor-pointer gap-2 rounded-none border-2 bg-transparent px-8 py-6 text-base font-bold tracking-wide uppercase"
             >
               Get started free
               <ArrowRight className="h-5 w-5" />
@@ -49,7 +47,7 @@ export default function HomePage() {
           </form>
         </div>
 
-        <p className="mt-8 text-sm text-muted-foreground">
+        <p className="text-muted-foreground mt-8 text-sm">
           No credit card. Any file type. Your files stay yours.
         </p>
       </div>
