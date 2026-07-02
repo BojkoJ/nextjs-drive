@@ -59,7 +59,7 @@ https://bojko-drive.netlify.app/
 
 The CI/CD pipeline uses **GitHub Actions** and **Netlify CD**, ensuring that code is automatically checked, linted, correctly built and deployed. The pipeline includes the following steps:
 
-### 🛠 **CI (Continuous Integration)**
+### **CI (Continuous Integration)**
 
 1. **Checkout of the code** – Loads the repository code into the GitHub Actions runner.
 2. **Dependencies Install** – We use `pnpm` to install all necessary dependencies for the project.
@@ -67,24 +67,6 @@ The CI/CD pipeline uses **GitHub Actions** and **Netlify CD**, ensuring that cod
 4. **Typecheck** – Checks TypeScript types to ensure type safety across the codebase.
 5. **Lint** – Runs ESLint to check for code quality and style issues.
 
-### 🚀 **CD (Continuous Deployment)**
+### **CD (Continuous Deployment)**
 
 Deployment is triggered automatically by Netlify when changes are pushed. Netlify builds the project and deploys it to the live environment.
-
-## MAIN TODO:
-
-- [x] Set up database and data model _(finished 10.04.2025)_
-- [x] Move folder open state to URL
-- [x] Add ClerkAuth
-- [x] Add file uploading (only images for now)
-- [x] Add analytics (Posthog)
-- [x] Make sure the sort order is consistent
-- [x] 'Delete file' button
-- [x] Add ownership to folders, each user sees only his folders
-- [x] Real homepage + Onboarding
-- [x] Create folder
-- [x] Rename folder after creating
-- [ ] Delete folder - fetch all folders that have it as parent and their children too, then delete them all
-- [ ] Make a "file view" page
-- [ ] Toasts after file upload, Loading states, better UX
-- [ ] Gray out a row while it's being deleted - set states in component etc.

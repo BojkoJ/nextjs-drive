@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull, sum } from "drizzle-orm";
 import { db } from "~/server/db";
 import {
   files_table as filesSchema,
@@ -48,7 +48,7 @@ export function GetFolders(folderId: number) {
     .select()
     .from(foldersSchema)
     .where(eq(foldersSchema.parent, folderId))
-    .orderBy(foldersSchema.id);
+    .orderBy(foldersSchema.order, foldersSchema.id);
 }
 
 export function GetFiles(folderId: number) {
@@ -56,5 +56,70 @@ export function GetFiles(folderId: number) {
     .select()
     .from(filesSchema)
     .where(eq(filesSchema.parent, folderId))
-    .orderBy(filesSchema.id);
+    .orderBy(filesSchema.order, filesSchema.id);
+}
+
+export async function GetFileById(fileId: number) {
+  const file = await db
+    .select()
+    .from(filesSchema)
+    .where(eq(filesSchema.id, fileId));
+  return file[0];
+}
+
+// Spočítá další volnou "order" hodnotu pro nově vytvořenou položku, aby se
+// nově vytvořené složky/soubory přidávaly na konec seznamu, ne na jeho začátek
+// (order sloupec má DB default 0, který by je jinak posunul mezi první položky).
+export async function GetNextOrderValue(parentId: number, ownerId: string) {
+  const [folders, files] = await Promise.all([
+    db
+      .select({ order: foldersSchema.order })
+      .from(foldersSchema)
+      .where(
+        and(eq(foldersSchema.parent, parentId), eq(foldersSchema.ownerId, ownerId)),
+      ),
+    db
+      .select({ order: filesSchema.order })
+      .from(filesSchema)
+      .where(
+        and(eq(filesSchema.parent, parentId), eq(filesSchema.ownerId, ownerId)),
+      ),
+  ]);
+
+  const orders = [...folders.map((f) => f.order), ...files.map((f) => f.order)];
+  return orders.length === 0 ? 0 : Math.max(...orders) + 1;
+}
+
+// Sečte velikost všech souborů ve složce a rekurzivně ve všech jejích podsložkách.
+export async function GetFolderSize(folderId: number) {
+  let total = 0;
+  let currentLevel = [folderId];
+
+  while (currentLevel.length > 0) {
+    const [files, childFolders] = await Promise.all([
+      db
+        .select({ size: filesSchema.size })
+        .from(filesSchema)
+        .where(inArray(filesSchema.parent, currentLevel)),
+      db
+        .select({ id: foldersSchema.id })
+        .from(foldersSchema)
+        .where(inArray(foldersSchema.parent, currentLevel)),
+    ]);
+
+    total += files.reduce((sum, f) => sum + f.size, 0);
+    currentLevel = childFolders.map((f) => f.id);
+  }
+
+  return total;
+}
+
+// Celkové využití úložiště napříč všemi složkami uživatele (pro limit v navigaci).
+export async function GetUserStorageUsage(userId: string) {
+  const [result] = await db
+    .select({ total: sum(filesSchema.size) })
+    .from(filesSchema)
+    .where(eq(filesSchema.ownerId, userId));
+
+  return Number(result?.total ?? 0);
 }

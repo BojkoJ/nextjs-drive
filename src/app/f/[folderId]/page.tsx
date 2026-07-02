@@ -6,6 +6,7 @@ import {
   getAllParentsForFolder,
   GetFiles,
   GetFolders,
+  GetFolderSize,
 } from "~/server/db/queries";
 
 export default async function GoogleDriveClone(props: {
@@ -70,6 +71,11 @@ export default async function GoogleDriveClone(props: {
     );
   }
 
+  const folderSizeEntries = await Promise.all(
+    folders.map(async (folder) => [folder.id, await GetFolderSize(folder.id)] as const),
+  );
+  const folderSizes = Object.fromEntries(folderSizeEntries);
+
   // 3. Až všechny Promisy skončí, tak renderujeme komponentu DriveContent
   return (
     <DriveContent
@@ -77,6 +83,7 @@ export default async function GoogleDriveClone(props: {
       folders={folders}
       parents={parents}
       currentFolderId={parsedFolderId}
+      folderSizes={folderSizes}
     />
   );
 }

@@ -1,113 +1,321 @@
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
+import { motion } from "motion/react";
 
 import {
-  FileIcon,
-  FileSpreadsheetIcon,
-  FileTextIcon,
-  FileVideoIcon,
-  FolderArchiveIcon,
-  Folder as FolderIcon,
-  ImageIcon,
-  MusicIcon,
-  PresentationIcon,
-  Trash2Icon,
   CheckIcon,
+  GripVerticalIcon,
+  Loader2Icon,
+  PencilIcon,
+  Trash2Icon,
   XIcon,
 } from "lucide-react";
 import type { files_table, folders_table } from "~/server/db/schema";
 import { Button } from "./ui/button";
-import { DeleteFile, RenameFolder } from "~/server/actions";
-import { useState, useEffect, useRef } from "react";
+import { Checkbox } from "./ui/checkbox";
+import { RenameFile, RenameFolder } from "~/server/actions";
+import { useState, useEffect, useRef, useTransition } from "react";
+import { toast } from "sonner";
+import { FileTypeIcon } from "~/lib/file-icons";
+import { formatFileSize } from "~/lib/format-size";
+import { AnimatedFolderIcon } from "./animated-folder-icon";
+
+// motion.li's types redefine onDragStart/onDragEnd for its own pointer-drag
+// gesture (PanInfo-based), which shadows the native HTML5 DnD callback shape
+// we actually want here. This cast is type-only: with no `drag` prop set on
+// the element, motion forwards these straight through as plain native
+// ondragstart/ondragend DOM listeners.
+function nativeDragHandler(
+  handler: ((e: React.DragEvent) => void) | undefined,
+) {
+  return handler as unknown as
+    | ((event: MouseEvent | TouchEvent | PointerEvent, info: unknown) => void)
+    | undefined;
+}
+
+// Native `draggable` on the row would let a drag start from anywhere on it.
+// To restrict dragging to this handle, the row keeps draggable=false until
+// this handle reports mousedown, and the row flips it back off on drag end
+// (a real drag happened) or this handle's own mouseup (just a click, no drag).
+const LONG_NAME_THRESHOLD = 40;
+
+// Past the threshold, a name would otherwise spill past the Name column into
+// Type (row height is fixed, so wrapping and growing the row isn't an
+// option). Confines it to roughly one line's height with a vertical
+// scrollbar instead, so the full name is still reachable, just scrolled to.
+function ScrollableName(props: { name: string }) {
+  const isLong = props.name.length > LONG_NAME_THRESHOLD;
+  return (
+    <span
+      className={
+        isLong
+          ? "max-h-5 min-w-0 overflow-y-auto align-middle break-all whitespace-normal"
+          : "min-w-0 truncate"
+      }
+    >
+      {props.name}
+    </span>
+  );
+}
+
+function DragHandle(props: {
+  onMouseDown?: () => void;
+  onMouseUp?: () => void;
+}) {
+  return (
+    <GripVerticalIcon
+      aria-hidden
+      size={16}
+      onMouseDown={props.onMouseDown}
+      onMouseUp={props.onMouseUp}
+      className="text-muted-foreground shrink-0 cursor-grab active:cursor-grabbing"
+    />
+  );
+}
 
 export function FileRow(props: {
   file: typeof files_table.$inferSelect;
   last?: boolean;
+  isDeleting?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
+  onRequestDelete: () => void;
+  draggable?: boolean;
+  onDragStart?: (e: React.DragEvent) => void;
+  onDragEnd?: (e: React.DragEvent) => void;
 }) {
-  const { file, last = false } = props;
+  const { file, last = false, isDeleting = false } = props;
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [fileName, setFileName] = useState(file.name);
+  const [isSaving, startSaveTransition] = useTransition();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [dragArmed, setDragArmed] = useState(false);
+
+  // Keep the displayed name in sync with genuinely external changes, but
+  // never while the user has this row open for editing (see FolderRow).
+  const [prevFileNameProp, setPrevFileNameProp] = useState(file.name);
+  if (file.name !== prevFileNameProp) {
+    setPrevFileNameProp(file.name);
+    if (!isEditMode) {
+      setFileName(file.name);
+    }
+  }
+
+  useEffect(() => {
+    if (isEditMode && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditMode]);
+
+  const handleSave = () => {
+    if (fileName.trim() === "") {
+      setFileName(file.name);
+      return;
+    }
+
+    startSaveTransition(async () => {
+      try {
+        const result = await RenameFile(file.id, fileName.trim());
+        if (result.error) {
+          toast.error(result.error);
+          setFileName(file.name);
+        }
+      } catch {
+        toast.error("Failed to rename file");
+        setFileName(file.name);
+      }
+
+      setIsEditMode(false);
+    });
+  };
+
+  const handleCancel = () => {
+    setFileName(file.name);
+    setIsEditMode(false);
+  };
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSave();
+    } else if (e.key === "Escape") {
+      handleCancel();
+    }
+  };
 
   return (
-    <li
+    <motion.li
       key={file.id}
-      className={`px-6 py-4 font-mono text-sm hover:bg-accent/50 ${last ? "" : "border-b border-border"}`}
+      layout
+      transition={{ type: "spring", stiffness: 500, damping: 40 }}
+      draggable={props.draggable && dragArmed}
+      onDragStart={nativeDragHandler(props.onDragStart)}
+      onDragEnd={nativeDragHandler((e) => {
+        setDragArmed(false);
+        props.onDragEnd?.(e);
+      })}
+      className={`hover:bg-accent/50 flex items-center gap-4 px-6 py-4 font-mono text-sm transition-opacity ${last ? "" : "border-border border-b"} ${isDeleting ? "pointer-events-none opacity-50" : ""}`}
     >
-      <div className="grid grid-cols-12 items-center gap-4">
-        <div className="col-span-6 flex items-center">
-          <Link
-            href={file.url}
-            className="flex items-center text-foreground hover:text-primary"
-            target="_blank" // Otevře v novém tabu - vhodné pro drive klon - když klikneme na file tak je vhodné aby se otevřel v novém tabu
-          >
-            {file.name.includes(".png") ||
-            file.name.includes(".jpg") ||
-            file.name.includes(".jpeg") ||
-            file.name.includes(".gif") ||
-            file.name.includes(".webp") ? (
-              <ImageIcon className="mr-3 text-primary" size={20} />
-            ) : file.name.includes(".ppt") || file.name.includes(".pptx") ? (
-              <PresentationIcon className="mr-3 text-primary" size={20} />
-            ) : file.name.includes(".xls") || file.name.includes(".xlsx") ? (
-              <FileSpreadsheetIcon className="mr-3 text-primary" size={20} />
-            ) : file.name.includes(".txt") ||
-              file.name.includes(".doc") ||
-              file.name.includes(".docx") ||
-              file.name.includes(".pdf") ? (
-              <FileTextIcon className="mr-3 text-primary" size={20} />
-            ) : file.name.includes(".zip") ||
-              file.name.includes(".rar") ||
-              file.name.includes(".7z") ? (
-              <FolderArchiveIcon className="mr-3 text-primary" size={20} />
-            ) : file.name.includes(".mp4") ||
-              file.name.includes(".avi") ||
-              file.name.includes(".mov") ||
-              file.name.includes(".mkv") ? (
-              <FileVideoIcon className="mr-3 text-primary" size={20} />
-            ) : file.name.includes(".mp3") ||
-              file.name.includes(".wav") ||
-              file.name.includes(".flac") ? (
-              <MusicIcon className="mr-3 text-primary" size={20} />
-            ) : (
-              <FileIcon className="mr-3 text-primary" size={20} />
-            )}
-            {file.name}
-          </Link>
+      <Checkbox
+        checked={!!props.isSelected}
+        onCheckedChange={() => props.onToggleSelect?.()}
+        aria-label={`Select ${file.name}`}
+      />
+      <DragHandle
+        onMouseDown={() => setDragArmed(true)}
+        onMouseUp={() => setDragArmed(false)}
+      />
+      <div className="grid flex-1 grid-cols-12 items-center gap-4">
+        <div className="col-span-5 flex min-w-0 items-center">
+          {isEditMode ? (
+            <div className="flex w-full items-center">
+              <FileTypeIcon
+                name={file.name}
+                className="mr-3 text-xl leading-none"
+              />
+              <input
+                ref={inputRef}
+                type="text"
+                value={fileName}
+                onChange={(e) => setFileName(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={isSaving}
+                className="border-border bg-input text-foreground focus:border-primary w-2/3 border px-2 py-1 font-mono focus:outline-none disabled:opacity-50"
+              />
+              <div className="ml-2 flex gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="hover:bg-primary/20 hover:text-primary h-6 w-6 cursor-pointer p-0"
+                >
+                  {isSaving ? (
+                    <Loader2Icon size={14} className="animate-spin" />
+                  ) : (
+                    <CheckIcon size={14} />
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCancel}
+                  disabled={isSaving}
+                  className="hover:bg-destructive/10 hover:text-destructive h-6 w-6 cursor-pointer p-0"
+                >
+                  <XIcon size={14} />
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Link
+              href={`/file/${file.id}`}
+              className="text-foreground hover:text-primary flex min-w-0 items-center"
+            >
+              <FileTypeIcon
+                name={file.name}
+                className="mr-3 shrink-0 text-xl leading-none"
+              />
+              {/* Render the just-saved local name, not the file.name prop:
+                  the prop only updates once the background refresh lands,
+                  which would otherwise flash the pre-rename name for a beat. */}
+              <ScrollableName name={fileName} />
+            </Link>
+          )}
         </div>
-        <div className="col-span-3 text-muted-foreground">{"File"}</div>
-        <div className="col-span-2 text-muted-foreground">
-          {Math.ceil(file.size / 1024)} KB
+        <div className="text-muted-foreground col-span-3">{"File"}</div>
+        <div className="text-muted-foreground col-span-2">
+          {formatFileSize(file.size)}
         </div>
-        <div className="col-span-1 text-muted-foreground">
-          <Button
-            variant="ghost"
-            className="cursor-pointer hover:bg-destructive/10 hover:text-destructive"
-            onClick={() => DeleteFile(file.id)}
-            aria-label="Delete file"
-          >
-            <Trash2Icon size={25} />
-          </Button>
+        <div className="text-muted-foreground col-span-2 flex items-center">
+          {!isEditMode && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsEditMode(true)}
+                aria-label="Rename file"
+                className="hover:bg-primary/10 hover:text-primary cursor-pointer"
+              >
+                <PencilIcon size={18} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+                onClick={props.onRequestDelete}
+                disabled={isDeleting}
+                aria-label="Delete file"
+              >
+                {isDeleting ? (
+                  <Loader2Icon size={20} className="animate-spin" />
+                ) : (
+                  <Trash2Icon size={20} />
+                )}
+              </Button>
+            </>
+          )}
         </div>
       </div>
-    </li>
+    </motion.li>
+  );
+}
+
+function FolderLinkIcon(props: { isDropTarget?: boolean }) {
+  const { pending } = useLinkStatus();
+  return (
+    <AnimatedFolderIcon
+      isOpen={pending || !!props.isDropTarget}
+      className="mr-3 shrink-0 text-xl leading-none"
+    />
   );
 }
 
 export function FolderRow(props: {
   folder: typeof folders_table.$inferSelect;
+  size: number;
   last?: boolean;
   isEditing?: boolean;
   onEditComplete?: () => void;
+  isDeleting?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
+  onRequestDelete: () => void;
+  draggable?: boolean;
+  onDragStart?: (e: React.DragEvent) => void;
+  onDragEnd?: (e: React.DragEvent) => void;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDragLeave?: (e: React.DragEvent) => void;
+  onDrop?: (e: React.DragEvent) => void;
+  isDropTarget?: boolean;
 }) {
-  const { folder, last = false, isEditing = false, onEditComplete } = props;
+  const {
+    folder,
+    last = false,
+    isEditing = false,
+    onEditComplete,
+    isDeleting = false,
+  } = props;
   const [isEditMode, setIsEditMode] = useState(isEditing);
   const [folderName, setFolderName] = useState(folder.name);
+  const [isSaving, startSaveTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
+  const [dragArmed, setDragArmed] = useState(false);
 
   const [prevIsEditing, setPrevIsEditing] = useState(isEditing);
-  const [prevFolderNameProp, setPrevFolderNameProp] = useState(folder.name);
-  if (isEditing !== prevIsEditing || folder.name !== prevFolderNameProp) {
+  if (isEditing !== prevIsEditing) {
     setPrevIsEditing(isEditing);
-    setPrevFolderNameProp(folder.name);
     if (isEditing) {
       setIsEditMode(true);
+      setFolderName(folder.name);
+    }
+  }
+
+  // Keep the displayed name in sync with genuinely external changes (e.g. a
+  // refresh from another tab), but never while the user has this row open
+  // for editing, since that would stomp on what they're currently typing.
+  const [prevFolderNameProp, setPrevFolderNameProp] = useState(folder.name);
+  if (folder.name !== prevFolderNameProp) {
+    setPrevFolderNameProp(folder.name);
+    if (!isEditMode) {
       setFolderName(folder.name);
     }
   }
@@ -119,25 +327,27 @@ export function FolderRow(props: {
     }
   }, [isEditMode]);
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (folderName.trim() === "") {
       setFolderName(folder.name);
       return;
     }
 
-    try {
-      const result = await RenameFolder(folder.id, folderName.trim());
-      if (result.error) {
-        console.error("Failed to rename folder:", result.error);
-        setFolderName(folder.name); // Revert to original name
+    startSaveTransition(async () => {
+      try {
+        const result = await RenameFolder(folder.id, folderName.trim());
+        if (result.error) {
+          toast.error(result.error);
+          setFolderName(folder.name);
+        }
+      } catch {
+        toast.error("Failed to rename folder");
+        setFolderName(folder.name);
       }
-    } catch (error) {
-      console.error("Error renaming folder:", error);
-      setFolderName(folder.name); // Revert to original name
-    }
 
-    setIsEditMode(false);
-    onEditComplete?.();
+      setIsEditMode(false);
+      onEditComplete?.();
+    });
   };
 
   const handleCancel = () => {
@@ -147,44 +357,74 @@ export function FolderRow(props: {
   };
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
-      void handleSave();
+      handleSave();
     } else if (e.key === "Escape") {
       handleCancel();
     }
   };
 
   return (
-    <li
+    <motion.li
       key={folder.id}
-      className={`px-6 py-4 font-mono text-sm hover:bg-accent/50 ${last ? "" : "border-b border-border"}`}
+      layout
+      transition={{ type: "spring", stiffness: 500, damping: 40 }}
+      draggable={props.draggable && dragArmed}
+      onDragStart={nativeDragHandler(props.onDragStart)}
+      onDragEnd={nativeDragHandler((e) => {
+        setDragArmed(false);
+        props.onDragEnd?.(e);
+      })}
+      onDragOver={props.onDragOver}
+      onDragLeave={props.onDragLeave}
+      onDrop={props.onDrop}
+      className={`hover:bg-accent/50 flex items-center gap-4 px-6 py-4 font-mono text-sm transition-opacity ${last ? "" : "border-border border-b"} ${isDeleting ? "pointer-events-none opacity-50" : ""} ${props.isDropTarget ? "bg-primary/10 ring-primary ring-2 ring-inset" : ""}`}
     >
-      <div className="grid grid-cols-12 items-center gap-4">
-        <div className="col-span-6 flex items-center">
+      <Checkbox
+        checked={!!props.isSelected}
+        onCheckedChange={() => props.onToggleSelect?.()}
+        aria-label={`Select ${folder.name}`}
+      />
+      <DragHandle
+        onMouseDown={() => setDragArmed(true)}
+        onMouseUp={() => setDragArmed(false)}
+      />
+      <div className="grid flex-1 grid-cols-12 items-center gap-4">
+        <div className="col-span-5 flex min-w-0 items-center">
           {isEditMode ? (
             <div className="flex w-full items-center">
-              <FolderIcon className="mr-3 text-amber-400" size={20} />
+              <AnimatedFolderIcon
+                isOpen
+                className="mr-3 text-xl leading-none"
+              />
               <input
                 ref={inputRef}
                 type="text"
                 value={folderName}
                 onChange={(e) => setFolderName(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="w-2/3 border border-border bg-input px-2 py-1 font-mono text-foreground focus:border-primary focus:outline-none"
+                disabled={isSaving}
+                className="border-border bg-input text-foreground focus:border-primary w-2/3 border px-2 py-1 font-mono focus:outline-none disabled:opacity-50"
               />
               <div className="ml-2 flex gap-1">
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => void handleSave()}
-                  className="h-6 w-6 cursor-pointer p-0 hover:bg-primary/20 hover:text-primary"
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="hover:bg-primary/20 hover:text-primary h-6 w-6 cursor-pointer p-0"
                 >
-                  <CheckIcon size={14} />
+                  {isSaving ? (
+                    <Loader2Icon size={14} className="animate-spin" />
+                  ) : (
+                    <CheckIcon size={14} />
+                  )}
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleCancel}
-                  className="h-6 w-6 cursor-pointer p-0 hover:bg-destructive/10 hover:text-destructive"
+                  disabled={isSaving}
+                  className="hover:bg-destructive/10 hover:text-destructive h-6 w-6 cursor-pointer p-0"
                 >
                   <XIcon size={14} />
                 </Button>
@@ -193,16 +433,50 @@ export function FolderRow(props: {
           ) : (
             <Link
               href={`/f/${folder.id}`}
-              className="flex cursor-pointer items-center text-foreground hover:text-primary"
+              className="text-foreground hover:text-primary flex min-w-0 cursor-pointer items-center"
             >
-              <FolderIcon className="mr-3 text-amber-400" size={20} />
-              {folder.name}
+              <FolderLinkIcon isDropTarget={props.isDropTarget} />
+              {/* Render the just-saved local name, not the folder.name prop:
+                  the prop only updates once the background refresh lands,
+                  which would otherwise flash the pre-rename name for a beat. */}
+              <ScrollableName name={folderName} />
             </Link>
           )}
         </div>
-        <div className="col-span-3 text-muted-foreground">Folder</div>
-        <div className="col-span-3 text-muted-foreground"></div>
+        <div className="text-muted-foreground col-span-3">Folder</div>
+        <div className="text-muted-foreground col-span-2">
+          {formatFileSize(props.size)}
+        </div>
+        <div className="text-muted-foreground col-span-2 flex items-center">
+          {!isEditMode && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsEditMode(true)}
+                aria-label="Rename folder"
+                className="hover:bg-primary/10 hover:text-primary cursor-pointer"
+              >
+                <PencilIcon size={18} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+                onClick={props.onRequestDelete}
+                disabled={isDeleting}
+                aria-label="Delete folder"
+              >
+                {isDeleting ? (
+                  <Loader2Icon size={20} className="animate-spin" />
+                ) : (
+                  <Trash2Icon size={20} />
+                )}
+              </Button>
+            </>
+          )}
+        </div>
       </div>
-    </li>
+    </motion.li>
   );
 }

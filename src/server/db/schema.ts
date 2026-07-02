@@ -22,6 +22,7 @@ export const files_table = createTable(
     size: int("size").notNull(),
     url: text("url").notNull(),
     parent: bigint("parent", { mode: "number", unsigned: true }).notNull(),
+    order: int("order").notNull().default(0),
     created_at: timestamp("created_at").notNull().defaultNow(),
   },
   (t) => {
@@ -45,6 +46,7 @@ export const folders_table = createTable(
     ownerId: text("owner_id").notNull(),
     name: text("name").notNull(),
     parent: bigint("parent", { mode: "number", unsigned: true }),
+    order: int("order").notNull().default(0),
     created_at: timestamp("created_at").notNull().defaultNow(),
   },
   (t) => {

@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { db } from "~/server/db";
 import { files_table as filesSchema } from "~/server/db/schema";
 import { folders_table as folderSchema } from "~/server/db/schema";
+import { GetNextOrderValue } from "~/server/db/queries";
 
 export async function getFolderById(folderId: number) {
   return await db
@@ -23,9 +24,10 @@ export async function createFile(input: {
   };
   userId: string;
 }) {
+  const order = await GetNextOrderValue(input.file.parent, input.userId);
   return await db
     .insert(filesSchema)
-    .values({ ...input.file, ownerId: input.userId });
+    .values({ ...input.file, ownerId: input.userId, order });
 }
 
 export async function OnboardUser(userId: string) {

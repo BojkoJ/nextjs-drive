@@ -126,3 +126,41 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Reskin react-h5-audio-player to match the brutalist mint theme.
+   !important throughout: the doc-viewer's stylesheet (imported for
+   docx/pptx/etc previews) lands in a later cascade layer/position and
+   would otherwise win over these plain rules. */
+.rhap_container {
+  background-color: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  font-family: var(--font-geist-sans) !important;
+}
+.rhap_time,
+.rhap_volume-indicator {
+  color: var(--foreground) !important;
+}
+.rhap_main-controls-button,
+.rhap_volume-button {
+  color: var(--primary) !important;
+}
+.rhap_progress-filled,
+.rhap_progress-indicator,
+.rhap_volume-filled,
+.rhap_volume-indicator {
+  background-color: var(--primary) !important;
+}
+.rhap_progress-bar,
+.rhap_volume-bar {
+  background-color: var(--muted) !important;
+  border-radius: 0 !important;
+}
+.rhap_progress-indicator,
+.rhap_volume-indicator {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.rhap_download-progress {
+  background-color: var(--border) !important;
+}

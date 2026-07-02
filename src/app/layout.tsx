@@ -12,6 +12,8 @@ import {
 import { PostHogProvider } from "~/_providers/posthog-provider";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
+import { StorageMeter } from "~/components/storage-meter";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   title: "Bojko Drive",
@@ -45,6 +47,7 @@ export default function RootLayout({
                 </Link>
                 <div className="flex items-center gap-4">
                   <Show when="signed-in">
+                    <StorageMeter />
                     <UserButton />
                   </Show>
                   <Show when="signed-out">
@@ -61,6 +64,28 @@ export default function RootLayout({
               </div>
             </header>
             {children}
+            <Toaster
+              theme="dark"
+              position="bottom-right"
+              closeButton
+              toastOptions={{
+                unstyled: true,
+                classNames: {
+                  toast:
+                    "flex items-center gap-3 w-full border-2 border-border bg-card px-4 py-3.5 font-mono text-sm text-foreground shadow-none",
+                  title: "font-bold",
+                  description: "text-muted-foreground",
+                  actionButton:
+                    "rounded-none! border-2 border-primary bg-primary px-3 py-1.5 text-xs font-bold tracking-wide text-primary-foreground uppercase",
+                  cancelButton:
+                    "rounded-none! border border-border bg-transparent px-3 py-1.5 text-xs text-muted-foreground uppercase",
+                  closeButton:
+                    "rounded-none! border border-border bg-card text-muted-foreground hover:text-foreground",
+                  success: "border-primary [&_svg]:text-primary",
+                  error: "border-destructive [&_svg]:text-destructive",
+                },
+              }}
+            />
           </PostHogProvider>
         </body>
       </html>

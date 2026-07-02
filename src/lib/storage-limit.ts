@@ -1,0 +1,2 @@
+export const DRIVE_LIMIT_BYTES = 80 * 1024 * 1024;
+export const DRIVE_LIMIT_MB = DRIVE_LIMIT_BYTES / (1024 * 1024);

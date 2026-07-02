@@ -3,6 +3,8 @@ import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { UploadThingError } from "uploadthing/server";
 import { z } from "zod";
 import { createFile, getFolderById } from "~/server/db/mutations";
+import { GetUserStorageUsage } from "~/server/db/queries";
+import { DRIVE_LIMIT_BYTES } from "~/lib/storage-limit";
 
 const f = createUploadthing();
 
@@ -26,7 +28,7 @@ export const ourFileRouter = {
       }),
     )
     // Nastavení oprávnění a typů souborů pro tuto FileRoute
-    .middleware(async ({ input }) => {
+    .middleware(async ({ input, files }) => {
       // middleware je funkce, která proběhně, než user zahájí upload
 
       // Tento kód běží na serveru před uploadem
@@ -44,6 +46,18 @@ export const ourFileRouter = {
       if (folder.ownerId !== user.userId) {
         // eslint-disable-next-line @typescript-eslint/only-throw-error
         throw new UploadThingError("Unauthorized");
+      }
+
+      // Zkontrolujeme limit úložiště ještě před přenosem souborů (files zde
+      // obsahuje jen klientem deklarovaná jména/velikosti, žádná data zatím netekla)
+      const currentUsage = await GetUserStorageUsage(user.userId);
+      const incomingSize = files.reduce((total, file) => total + file.size, 0);
+
+      if (currentUsage + incomingSize > DRIVE_LIMIT_BYTES) {
+        // eslint-disable-next-line @typescript-eslint/only-throw-error
+        throw new UploadThingError(
+          "Storage limit reached. Delete some files to free up space.",
+        );
       }
 
       // Cokoliv je vráceno z middleware, bude dostupné v onUploadStart jako `metadata`
