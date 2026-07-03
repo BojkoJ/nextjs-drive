@@ -436,7 +436,7 @@ export default function DriveContent(props: {
   }
 
   return (
-    <div className="bg-background text-foreground min-h-screen p-8">
+    <div className="bg-background text-foreground min-h-screen p-4 sm:p-8">
       {/* Off-screen element used only as a custom drag preview image for multi-item drags */}
       <div
         ref={dragBadgeRef}
@@ -457,7 +457,7 @@ export default function DriveContent(props: {
             made invisible when empty, so this slot's natural height is always
             identical to its populated height and nothing below it ever shifts. */}
         <div
-          className={`mb-4 flex items-center justify-between border-2 px-4 py-3 transition-colors ${selectedKeys.size > 0 ? "border-primary bg-primary/10" : "border-transparent"}`}
+          className={`mb-4 flex flex-wrap items-center justify-between gap-2 border-2 px-4 py-3 transition-colors ${selectedKeys.size > 0 ? "border-primary bg-primary/10" : "border-transparent"}`}
         >
           <span
             className={`text-foreground font-mono text-sm ${selectedKeys.size > 0 ? "" : "invisible"}`}
@@ -489,7 +489,7 @@ export default function DriveContent(props: {
         </div>
 
         <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center">
+          <div className="flex flex-wrap items-center">
             <Link href={`/f/${rootFolderId}`}>
               <Button
                 variant="ghost"
@@ -527,19 +527,19 @@ export default function DriveContent(props: {
           {/*<div className="absolute inset-0 translate-x-2 translate-y-2 -rotate-1 border border-primary/30 bg-primary/5" />*/}
           <div className="border-border bg-card relative border">
             <div
-              className={`flex items-center gap-4 px-6 py-4 ${optimisticItems.length === 0 ? "" : "border-border border-b"}`}
+              className={`flex items-center gap-2 px-3 py-4 sm:gap-4 sm:px-6 ${optimisticItems.length === 0 ? "" : "border-border border-b"}`}
             >
               <Checkbox
                 checked={allSelected}
                 onCheckedChange={toggleSelectAll}
                 aria-label="Select all"
               />
-              <div className="w-4 shrink-0" aria-hidden />
-              <div className="text-muted-foreground grid flex-1 grid-cols-12 gap-4 text-xs font-bold tracking-widest uppercase">
-                <div className="col-span-5">Name</div>
-                <div className="col-span-3">Type</div>
-                <div className="col-span-2">Size</div>
-                <div className="col-span-2"></div>
+              <div className="hidden w-4 shrink-0 sm:block" aria-hidden />
+              <div className="text-muted-foreground flex flex-1 items-center gap-2 text-xs font-bold tracking-widest uppercase sm:grid sm:grid-cols-12 sm:gap-4">
+                <div className="flex-1 sm:col-span-5">Name</div>
+                <div className="hidden sm:col-span-3 sm:block">Type</div>
+                <div className="shrink-0 sm:col-span-2">Size</div>
+                <div className="sm:col-span-2"></div>
               </div>
             </div>
             <ul>
@@ -611,68 +611,69 @@ export default function DriveContent(props: {
           </div>
         </div>
 
-        <Button
-          variant="outline"
-          className="border-primary text-primary hover:bg-primary hover:text-primary-foreground mt-6 cursor-pointer rounded-none border-2 bg-transparent text-xs font-bold tracking-wide uppercase"
-          aria-label="Create folder"
-          disabled={isCreatingFolder}
-          onClick={() => {
-            const tempId = -Date.now();
-            startCreateTransition(async () => {
-              // Show an empty, already-editable row instantly instead of
-              // waiting on the round trip and then flashing "New Folder"
-              // into view right before the user starts typing over it.
-              applyOptimisticAction({ type: "createFolder", tempId });
-              setEditingFolderId(tempId);
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <Button
+            variant="outline"
+            className="border-primary text-primary hover:bg-primary hover:text-primary-foreground cursor-pointer rounded-none border-2 bg-transparent text-xs font-bold tracking-wide uppercase"
+            aria-label="Create folder"
+            disabled={isCreatingFolder}
+            onClick={() => {
+              const tempId = -Date.now();
+              startCreateTransition(async () => {
+                // Show an empty, already-editable row instantly instead of
+                // waiting on the round trip and then flashing "New Folder"
+                // into view right before the user starts typing over it.
+                applyOptimisticAction({ type: "createFolder", tempId });
+                setEditingFolderId(tempId);
 
-              const result = await CreateFolder(
-                "New Folder",
-                props.currentFolderId,
-              );
-              if (result.success && result.folderId) {
-                setEditingFolderId(result.folderId);
-                router.refresh();
-              } else {
-                setEditingFolderId(null);
-                toast.error(result.error ?? "Failed to create folder");
-              }
-            });
-          }}
-        >
-          {isCreatingFolder ? (
-            <Loader2Icon className="mr-1.5 animate-spin" size={16} />
-          ) : (
-            <PlusIcon className="mr-1.5" size={16} />
-          )}
-          Folder
-        </Button>
-        <UploadButton
-          className="mt-10"
-          endpoint="driveUploader"
-          onBeforeUploadBegin={(files) => files.map(normalizeCodeFileType)}
-          appearance={{
-            container: "!w-max flex-row items-center gap-3",
-            button:
-              "!cursor-pointer !rounded-none !border-2 !border-primary !bg-transparent !px-6 !py-2.5 !text-xs !font-bold !tracking-wide !text-primary !uppercase !shadow-none after:!bg-primary hover:!bg-primary hover:!text-primary-foreground ut-uploading:!cursor-wait ut-uploading:!bg-primary/20 ut-readying:!cursor-wait focus-within:!ring-2 focus-within:!ring-ring focus-within:!ring-offset-0",
-            allowedContent: "!font-mono !text-xs !text-muted-foreground",
-          }}
-          content={{
-            button: ({ ready, isUploading }) => {
-              if (isUploading) return "Uploading...";
-              if (ready) return "Choose file(s)";
-              return "Loading...";
-            },
-          }}
-          onClientUploadComplete={(res) => {
-            const names = res.map((f) => f.name).join(", ");
-            toast.success(`Uploaded ${names}`);
-            router.refresh();
-          }}
-          onUploadError={(error) => {
-            toast.error(`Upload failed: ${error.message}`);
-          }}
-          input={{ folderId: props.currentFolderId }}
-        />
+                const result = await CreateFolder(
+                  "New Folder",
+                  props.currentFolderId,
+                );
+                if (result.success && result.folderId) {
+                  setEditingFolderId(result.folderId);
+                  router.refresh();
+                } else {
+                  setEditingFolderId(null);
+                  toast.error(result.error ?? "Failed to create folder");
+                }
+              });
+            }}
+          >
+            {isCreatingFolder ? (
+              <Loader2Icon className="mr-1.5 animate-spin" size={16} />
+            ) : (
+              <PlusIcon className="mr-1.5" size={16} />
+            )}
+            Folder
+          </Button>
+          <UploadButton
+            endpoint="driveUploader"
+            onBeforeUploadBegin={(files) => files.map(normalizeCodeFileType)}
+            appearance={{
+              container: "!w-max flex-row items-center gap-3",
+              button:
+                "!cursor-pointer !rounded-none !border-2 !border-primary !bg-transparent !px-6 !py-2.5 !text-xs !font-bold !tracking-wide !text-primary !uppercase !shadow-none after:!bg-primary hover:!bg-primary hover:!text-primary-foreground ut-uploading:!cursor-wait ut-uploading:!bg-primary/20 ut-readying:!cursor-wait focus-within:!ring-2 focus-within:!ring-ring focus-within:!ring-offset-0",
+              allowedContent: "!font-mono !text-xs !text-muted-foreground",
+            }}
+            content={{
+              button: ({ ready, isUploading }) => {
+                if (isUploading) return "Uploading...";
+                if (ready) return "Choose file(s)";
+                return "Loading...";
+              },
+            }}
+            onClientUploadComplete={(res) => {
+              const names = res.map((f) => f.name).join(", ");
+              toast.success(`Uploaded ${names}`);
+              router.refresh();
+            }}
+            onUploadError={(error) => {
+              toast.error(`Upload failed: ${error.message}`);
+            }}
+            input={{ folderId: props.currentFolderId }}
+          />
+        </div>
       </div>
     </div>
   );

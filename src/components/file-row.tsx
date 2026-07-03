@@ -67,7 +67,9 @@ function DragHandle(props: {
       size={16}
       onMouseDown={props.onMouseDown}
       onMouseUp={props.onMouseUp}
-      className="text-muted-foreground shrink-0 cursor-grab active:cursor-grabbing"
+      // Native HTML5 drag-and-drop has no touch equivalent anyway, so the
+      // handle (and the width reserved for it) only shows up at sm+.
+      className="text-muted-foreground hidden shrink-0 cursor-grab active:cursor-grabbing sm:block"
     />
   );
 }
@@ -152,7 +154,7 @@ export function FileRow(props: {
         setDragArmed(false);
         props.onDragEnd?.(e);
       })}
-      className={`hover:bg-accent/50 flex items-center gap-4 px-6 py-4 font-mono text-sm transition-opacity ${last ? "" : "border-border border-b"} ${isDeleting ? "pointer-events-none opacity-50" : ""}`}
+      className={`hover:bg-accent/50 flex items-center gap-2 px-3 py-4 font-mono text-sm transition-opacity sm:gap-4 sm:px-6 ${last ? "" : "border-border border-b"} ${isDeleting ? "pointer-events-none opacity-50" : ""}`}
     >
       <Checkbox
         checked={!!props.isSelected}
@@ -163,8 +165,8 @@ export function FileRow(props: {
         onMouseDown={() => setDragArmed(true)}
         onMouseUp={() => setDragArmed(false)}
       />
-      <div className="grid flex-1 grid-cols-12 items-center gap-4">
-        <div className="col-span-5 flex min-w-0 items-center">
+      <div className="flex min-w-0 flex-1 items-center gap-2 sm:grid sm:grid-cols-12 sm:gap-4">
+        <div className="flex min-w-0 flex-1 items-center sm:col-span-5">
           {isEditMode ? (
             <div className="flex w-full items-center">
               <FileTypeIcon
@@ -208,6 +210,7 @@ export function FileRow(props: {
           ) : (
             <Link
               href={`/file/${file.id}`}
+              draggable={false}
               className="text-foreground hover:text-primary flex min-w-0 items-center"
             >
               <FileTypeIcon
@@ -221,11 +224,13 @@ export function FileRow(props: {
             </Link>
           )}
         </div>
-        <div className="text-muted-foreground col-span-3">{"File"}</div>
-        <div className="text-muted-foreground col-span-2">
+        <div className="text-muted-foreground hidden sm:col-span-3 sm:block">
+          {"File"}
+        </div>
+        <div className="text-muted-foreground shrink-0 text-xs whitespace-nowrap sm:col-span-2 sm:text-sm">
           {formatFileSize(file.size)}
         </div>
-        <div className="text-muted-foreground col-span-2 flex items-center">
+        <div className="text-muted-foreground flex shrink-0 items-center sm:col-span-2">
           {!isEditMode && (
             <>
               <Button
@@ -377,7 +382,7 @@ export function FolderRow(props: {
       onDragOver={props.onDragOver}
       onDragLeave={props.onDragLeave}
       onDrop={props.onDrop}
-      className={`hover:bg-accent/50 flex items-center gap-4 px-6 py-4 font-mono text-sm transition-opacity ${last ? "" : "border-border border-b"} ${isDeleting ? "pointer-events-none opacity-50" : ""} ${props.isDropTarget ? "bg-primary/10 ring-primary ring-2 ring-inset" : ""}`}
+      className={`hover:bg-accent/50 flex items-center gap-2 px-3 py-4 font-mono text-sm transition-opacity sm:gap-4 sm:px-6 ${last ? "" : "border-border border-b"} ${isDeleting ? "pointer-events-none opacity-50" : ""} ${props.isDropTarget ? "bg-primary/10 ring-primary ring-2 ring-inset" : ""}`}
     >
       <Checkbox
         checked={!!props.isSelected}
@@ -388,8 +393,8 @@ export function FolderRow(props: {
         onMouseDown={() => setDragArmed(true)}
         onMouseUp={() => setDragArmed(false)}
       />
-      <div className="grid flex-1 grid-cols-12 items-center gap-4">
-        <div className="col-span-5 flex min-w-0 items-center">
+      <div className="flex min-w-0 flex-1 items-center gap-2 sm:grid sm:grid-cols-12 sm:gap-4">
+        <div className="flex min-w-0 flex-1 items-center sm:col-span-5">
           {isEditMode ? (
             <div className="flex w-full items-center">
               <AnimatedFolderIcon
@@ -433,6 +438,7 @@ export function FolderRow(props: {
           ) : (
             <Link
               href={`/f/${folder.id}`}
+              draggable={false}
               className="text-foreground hover:text-primary flex min-w-0 cursor-pointer items-center"
             >
               <FolderLinkIcon isDropTarget={props.isDropTarget} />
@@ -443,11 +449,13 @@ export function FolderRow(props: {
             </Link>
           )}
         </div>
-        <div className="text-muted-foreground col-span-3">Folder</div>
-        <div className="text-muted-foreground col-span-2">
+        <div className="text-muted-foreground hidden sm:col-span-3 sm:block">
+          Folder
+        </div>
+        <div className="text-muted-foreground shrink-0 text-xs whitespace-nowrap sm:col-span-2 sm:text-sm">
           {formatFileSize(props.size)}
         </div>
-        <div className="text-muted-foreground col-span-2 flex items-center">
+        <div className="text-muted-foreground flex shrink-0 items-center sm:col-span-2">
           {!isEditMode && (
             <>
               <Button

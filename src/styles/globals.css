@@ -127,6 +127,18 @@
   }
 }
 
+/* The whole UI is built on Tailwind's rem-based utilities, so bumping the
+   root font-size scales text, padding, gaps and radii together, the same
+   way a 150% browser zoom would. Only applies past 1920px width, so
+   1920x1080 / 1920x1200 monitors (and anything narrower) are untouched;
+   wider screens (2560, 4K, ultrawide, etc) get the "already zoomed" look
+   without the user having to zoom in themselves. */
+@media (min-width: 1921px) {
+  html {
+    font-size: 24px;
+  }
+}
+
 /* Reskin react-h5-audio-player to match the brutalist mint theme.
    !important throughout: the doc-viewer's stylesheet (imported for
    docx/pptx/etc previews) lands in a later cascade layer/position and
