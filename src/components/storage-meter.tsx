@@ -14,7 +14,7 @@ export async function StorageMeter() {
 
   return (
     <div className="hidden w-40 flex-col gap-1.5 sm:flex">
-      <span className="font-mono text-[11px] tracking-wide text-muted-foreground">
+      <span className="font-mono text-[0.6875rem] tracking-wide text-muted-foreground">
         <span className="font-bold text-foreground">
           {remainingMB.toFixed(2)}
         </span>{" "}

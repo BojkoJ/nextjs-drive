@@ -86,6 +86,7 @@ const CODE_EXTENSION_LANGUAGE: Record<string, string> = {
   sh: "bash",
   json: "json",
   sql: "sql",
+  txt: "txt",
 };
 
 function getExtension(fileName: string) {

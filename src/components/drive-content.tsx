@@ -19,7 +19,7 @@ import { GapDropZone } from "~/components/gap-drop-zone";
 import { PendingLinkLabel } from "~/components/pending-link-label";
 import { FileRow, FolderRow } from "~/components/file-row";
 import { isCodeFile } from "~/lib/file-icons";
-import { Show, SignInButton, UserButton, useUser } from "@clerk/nextjs";
+import { SignInButton, useUser } from "@clerk/nextjs";
 import { UploadButton } from "./uploadthing";
 import { useRouter } from "next/navigation";
 import {
