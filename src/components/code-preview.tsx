@@ -48,7 +48,7 @@ export function CodePreview(props: { name: string; url: string }) {
   if (!current) {
     return (
       <div className="flex h-[70vh] w-full items-center justify-center border border-border bg-background text-muted-foreground">
-        <Loader2Icon className="animate-spin" size={24} />
+        <Loader2Icon className="h-6 w-6 animate-spin" />
       </div>
     );
   }

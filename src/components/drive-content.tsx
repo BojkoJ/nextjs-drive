@@ -342,7 +342,14 @@ export default function DriveContent(props: {
     const key = keyOf(item.type, item.id);
     const draggedItems: DragItemRef[] =
       selectedKeys.size > 0 && selectedKeys.has(key)
-        ? Array.from(selectedKeys).map(parseKey)
+        ? // selectedKeys is a Set, so Array.from would yield checkbox-click
+          // order rather than the items' actual order in the folder. Deriving
+          // the list from optimisticItems (filter preserves source order)
+          // keeps the moved group's internal order intact regardless of the
+          // order they were selected in.
+          optimisticItems
+            .filter((it) => selectedKeys.has(keyOf(it.type, it.data.id)))
+            .map((it): DragItemRef => ({ id: it.data.id, type: it.type }))
         : [item];
 
     e.dataTransfer.setData("application/json", JSON.stringify(draggedItems));
@@ -482,7 +489,7 @@ export default function DriveContent(props: {
               className="border-destructive text-destructive hover:bg-destructive cursor-pointer gap-2 rounded-none border-2 text-xs font-bold tracking-wide uppercase hover:text-white"
               onClick={requestDeleteSelected}
             >
-              <Trash2Icon size={14} />
+              <Trash2Icon className="h-3.5 w-3.5" />
               Delete selected
             </Button>
           </div>
@@ -641,9 +648,9 @@ export default function DriveContent(props: {
             }}
           >
             {isCreatingFolder ? (
-              <Loader2Icon className="mr-1.5 animate-spin" size={16} />
+              <Loader2Icon className="mr-1.5 h-4 w-4 animate-spin" />
             ) : (
-              <PlusIcon className="mr-1.5" size={16} />
+              <PlusIcon className="mr-1.5 h-4 w-4" />
             )}
             Folder
           </Button>

@@ -128,9 +128,9 @@ export function FileView(props: { file: typeof files_table.$inferSelect }) {
                     className="hover:bg-primary/20 hover:text-primary h-8 w-8 cursor-pointer p-0"
                   >
                     {isSaving ? (
-                      <Loader2Icon size={16} className="animate-spin" />
+                      <Loader2Icon className="h-4 w-4 animate-spin" />
                     ) : (
-                      <CheckIcon size={16} />
+                      <CheckIcon className="h-4 w-4" />
                     )}
                   </Button>
                   <Button
@@ -143,7 +143,7 @@ export function FileView(props: { file: typeof files_table.$inferSelect }) {
                     disabled={isSaving}
                     className="hover:bg-destructive/10 hover:text-destructive h-8 w-8 cursor-pointer p-0"
                   >
-                    <XIcon size={16} />
+                    <XIcon className="h-4 w-4" />
                   </Button>
                 </>
               ) : (
@@ -185,7 +185,7 @@ export function FileView(props: { file: typeof files_table.$inferSelect }) {
                 {/* Invisible reference reserves the button's width so it
                     never resizes when the animated label below swaps text. */}
                 <span className="invisible inline-flex items-center gap-2">
-                  <CopyIcon size={16} />
+                  <CopyIcon className="h-4 w-4" />
                   Copy link
                 </span>
                 <AnimatePresence initial={false}>
@@ -198,9 +198,9 @@ export function FileView(props: { file: typeof files_table.$inferSelect }) {
                     className="absolute inset-0 flex items-center justify-center gap-2"
                   >
                     {justCopied ? (
-                      <CheckIcon size={16} />
+                      <CheckIcon className="h-4 w-4" />
                     ) : (
-                      <CopyIcon size={16} />
+                      <CopyIcon className="h-4 w-4" />
                     )}
                     {justCopied ? "Copied!" : "Copy link"}
                   </motion.span>
@@ -213,9 +213,9 @@ export function FileView(props: { file: typeof files_table.$inferSelect }) {
                 className="border-destructive text-destructive hover:bg-destructive cursor-pointer gap-2 rounded-none border-2 text-xs font-bold tracking-wide uppercase hover:text-white"
               >
                 {isDeleting ? (
-                  <Loader2Icon size={16} className="animate-spin" />
+                  <Loader2Icon className="h-4 w-4 animate-spin" />
                 ) : (
-                  <Trash2Icon size={16} />
+                  <Trash2Icon className="h-4 w-4" />
                 )}
                 Delete
               </Button>

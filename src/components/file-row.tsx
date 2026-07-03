@@ -64,12 +64,11 @@ function DragHandle(props: {
   return (
     <GripVerticalIcon
       aria-hidden
-      size={16}
       onMouseDown={props.onMouseDown}
       onMouseUp={props.onMouseUp}
       // Native HTML5 drag-and-drop has no touch equivalent anyway, so the
       // handle (and the width reserved for it) only shows up at sm+.
-      className="text-muted-foreground hidden shrink-0 cursor-grab active:cursor-grabbing sm:block"
+      className="text-muted-foreground hidden h-4 w-4 shrink-0 cursor-grab active:cursor-grabbing sm:block"
     />
   );
 }
@@ -191,9 +190,9 @@ export function FileRow(props: {
                   className="hover:bg-primary/20 hover:text-primary h-6 w-6 cursor-pointer p-0"
                 >
                   {isSaving ? (
-                    <Loader2Icon size={14} className="animate-spin" />
+                    <Loader2Icon className="h-3.5 w-3.5 animate-spin" />
                   ) : (
-                    <CheckIcon size={14} />
+                    <CheckIcon className="h-3.5 w-3.5" />
                   )}
                 </Button>
                 <Button
@@ -203,7 +202,7 @@ export function FileRow(props: {
                   disabled={isSaving}
                   className="hover:bg-destructive/10 hover:text-destructive h-6 w-6 cursor-pointer p-0"
                 >
-                  <XIcon size={14} />
+                  <XIcon className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </div>
@@ -240,7 +239,7 @@ export function FileRow(props: {
                 aria-label="Rename file"
                 className="hover:bg-primary/10 hover:text-primary cursor-pointer"
               >
-                <PencilIcon size={18} />
+                <PencilIcon className="h-4.5 w-4.5" />
               </Button>
               <Button
                 variant="ghost"
@@ -251,9 +250,9 @@ export function FileRow(props: {
                 aria-label="Delete file"
               >
                 {isDeleting ? (
-                  <Loader2Icon size={20} className="animate-spin" />
+                  <Loader2Icon className="h-5 w-5 animate-spin" />
                 ) : (
-                  <Trash2Icon size={20} />
+                  <Trash2Icon className="h-5 w-5" />
                 )}
               </Button>
             </>
@@ -419,9 +418,9 @@ export function FolderRow(props: {
                   className="hover:bg-primary/20 hover:text-primary h-6 w-6 cursor-pointer p-0"
                 >
                   {isSaving ? (
-                    <Loader2Icon size={14} className="animate-spin" />
+                    <Loader2Icon className="h-3.5 w-3.5 animate-spin" />
                   ) : (
-                    <CheckIcon size={14} />
+                    <CheckIcon className="h-3.5 w-3.5" />
                   )}
                 </Button>
                 <Button
@@ -431,7 +430,7 @@ export function FolderRow(props: {
                   disabled={isSaving}
                   className="hover:bg-destructive/10 hover:text-destructive h-6 w-6 cursor-pointer p-0"
                 >
-                  <XIcon size={14} />
+                  <XIcon className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </div>
@@ -465,7 +464,7 @@ export function FolderRow(props: {
                 aria-label="Rename folder"
                 className="hover:bg-primary/10 hover:text-primary cursor-pointer"
               >
-                <PencilIcon size={18} />
+                <PencilIcon className="h-4.5 w-4.5" />
               </Button>
               <Button
                 variant="ghost"
@@ -476,9 +475,9 @@ export function FolderRow(props: {
                 aria-label="Delete folder"
               >
                 {isDeleting ? (
-                  <Loader2Icon size={20} className="animate-spin" />
+                  <Loader2Icon className="h-5 w-5 animate-spin" />
                 ) : (
-                  <Trash2Icon size={20} />
+                  <Trash2Icon className="h-5 w-5" />
                 )}
               </Button>
             </>

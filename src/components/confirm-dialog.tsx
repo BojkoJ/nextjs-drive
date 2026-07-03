@@ -43,7 +43,7 @@ export function ConfirmDialog(props: {
             disabled={props.isConfirming}
           >
             {props.isConfirming && (
-              <Loader2Icon className="animate-spin" size={14} />
+              <Loader2Icon className="h-3.5 w-3.5 animate-spin" />
             )}
             {props.confirmLabel ?? "Delete"}
           </Button>
