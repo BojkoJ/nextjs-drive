@@ -18,6 +18,7 @@ import { ConfirmDialog } from "~/components/confirm-dialog";
 import { GapDropZone } from "~/components/gap-drop-zone";
 import { PendingLinkLabel } from "~/components/pending-link-label";
 import { FileRow, FolderRow } from "~/components/file-row";
+import { isCodeFile } from "~/lib/file-icons";
 import { Show, SignInButton, UserButton, useUser } from "@clerk/nextjs";
 import { UploadButton } from "./uploadthing";
 import { useRouter } from "next/navigation";
@@ -45,6 +46,20 @@ function parseKey(key: string): DragItemRef {
     type: key.slice(0, separatorIndex) as "file" | "folder",
     id: Number(key.slice(separatorIndex + 1)),
   };
+}
+
+// Browsers assign specific "script" MIME types to source files based on extension
+// (.py -> text/x-python, .sh -> application/x-sh, .js -> text/javascript, etc).
+// UploadThing's ingest layer appears to reject uploads whose Content-Type looks like a script, while an unrecognized type
+// (e.g. .go, which browsers can't classify) sails through untouched.
+function normalizeCodeFileType(file: File): File {
+  if (isCodeFile(file.name) && file.type !== "text/plain") {
+    return new File([file], file.name, {
+      type: "text/plain",
+      lastModified: file.lastModified,
+    });
+  }
+  return file;
 }
 
 export default function DriveContent(props: {
@@ -506,14 +521,6 @@ export default function DriveContent(props: {
               );
             })}
           </div>
-          <div className="">
-            <Show when="signed-out">
-              <SignInButton />
-            </Show>
-            <Show when="signed-in">
-              <UserButton />
-            </Show>
-          </div>
         </div>
 
         <div className="relative">
@@ -642,6 +649,7 @@ export default function DriveContent(props: {
         <UploadButton
           className="mt-10"
           endpoint="driveUploader"
+          onBeforeUploadBegin={(files) => files.map(normalizeCodeFileType)}
           appearance={{
             container: "!w-max flex-row items-center gap-3",
             button:
