@@ -5,14 +5,19 @@ import { animate } from "motion/react";
 import { interpolate } from "flubber";
 
 // Two-tone "duotone" folder matching the reference: a lighter gold fill with a distinct darker gold outline, rounded joins.
-const FOLDER_BODY = "M3 20.5 V4.5 H9 L11 6.5 H21 V20.5 Z";
 const OPEN_FLAP = "M5 20 L7 11 H22.5 L20.5 20 Z";
 
+// The back layer is split into the tab bump (stays gold, always) and the
+// paper underneath it (white, only ever exposed once the flap swings away).
+const TAB_SHAPE = "M3 6.5 V4.5 H9 L11 6.5 Z";
+const PAPER_SHAPE = "M3 20.5 V6.5 H21 V20.5 Z";
+
 const STROKE = "#d9a227"; // darker gold outline ("okraje")
-const BACK_FILL = "#e7b63a"; // slightly darker: the recessed interior/back
+const TAB_FILL = "#e7b63a"; // darker gold: the back tab bump
+const PAPER_FILL = "#ffffff"; // paper visible inside once the flap opens
 const FLAP_FILL = "#f6cf5e"; // lighter gold: the front face
 
-const morphFlap = interpolate(FOLDER_BODY, OPEN_FLAP, {
+const morphFlap = interpolate(PAPER_SHAPE, OPEN_FLAP, {
   maxSegmentLength: 0.3,
 });
 
@@ -48,10 +53,12 @@ export function AnimatedFolderIcon(props: {
         className="block"
         aria-hidden
       >
-        {/* Back pocket + tab, constant */}
-        <path d={FOLDER_BODY} fill={BACK_FILL} stroke={STROKE} />
+        {/* Paper inside the pocket, constant, revealed as the flap opens */}
+        <path d={PAPER_SHAPE} fill={PAPER_FILL} stroke={STROKE} />
+        {/* Back tab bump, constant */}
+        <path d={TAB_SHAPE} fill={TAB_FILL} stroke={STROKE} />
         {/* Front flap: morphs pocket -> tilted open flap */}
-        <path ref={flapRef} d={FOLDER_BODY} fill={FLAP_FILL} stroke={STROKE} />
+        <path ref={flapRef} d={PAPER_SHAPE} fill={FLAP_FILL} stroke={STROKE} />
       </svg>
     </span>
   );
