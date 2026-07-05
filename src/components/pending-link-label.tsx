@@ -1,7 +1,7 @@
 "use client";
 
 import { useLinkStatus } from "next/link";
-import { Loader2Icon } from "lucide-react";
+import { Spinner } from "~/components/ui/spinner";
 
 // Must be rendered as a descendant of a <Link>: useLinkStatus reads the
 // pending state of its nearest ancestor Link's navigation. The spinner is
@@ -14,17 +14,23 @@ export function PendingLinkLabel(props: {
 }) {
   const { pending } = useLinkStatus();
   return (
-    <span className={`relative inline-flex items-center ${props.className ?? ""}`}>
+    <span
+      className={`relative inline-flex items-center ${props.className ?? ""}`}
+    >
       <span
         className={`inline-flex items-center gap-1.5 transition-opacity ${pending ? "opacity-0" : "opacity-100"}`}
       >
         {props.children}
       </span>
       {pending && (
-        <Loader2Icon
-          className="absolute top-1/2 left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 animate-spin"
-          aria-hidden
-        />
+        // Centered via flexbox (inset-0 + items/justify-center), not
+        // translate: any transform on this wrapper would combine with the
+        // spinner's own rotate() and drift as the animation overwrites the
+        // composited transform each frame. Flex centering has no transform
+        // at all, so there's nothing for the spin animation to collide with.
+        <span className="absolute inset-0 flex items-center justify-center">
+          <Spinner className="h-3.5 w-3.5" />
+        </span>
       )}
     </span>
   );

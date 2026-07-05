@@ -9,11 +9,11 @@ import {
   CheckIcon,
   ChevronLeft,
   CopyIcon,
-  Loader2Icon,
   Trash2Icon,
   XIcon,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
+import { Spinner } from "~/components/ui/spinner";
 import { ConfirmDialog } from "~/components/confirm-dialog";
 import { FilePreview } from "~/components/file-preview";
 import { PendingLinkLabel } from "~/components/pending-link-label";
@@ -128,7 +128,7 @@ export function FileView(props: { file: typeof files_table.$inferSelect }) {
                     className="hover:bg-primary/20 hover:text-primary h-8 w-8 cursor-pointer p-0"
                   >
                     {isSaving ? (
-                      <Loader2Icon className="h-4 w-4 animate-spin" />
+                      <Spinner className="h-4 w-4" />
                     ) : (
                       <CheckIcon className="h-4 w-4" />
                     )}
@@ -213,7 +213,7 @@ export function FileView(props: { file: typeof files_table.$inferSelect }) {
                 className="border-destructive text-destructive hover:bg-destructive cursor-pointer gap-2 rounded-none border-2 text-xs font-bold tracking-wide uppercase hover:text-white"
               >
                 {isDeleting ? (
-                  <Loader2Icon className="h-4 w-4 animate-spin" />
+                  <Spinner className="h-4 w-4" />
                 ) : (
                   <Trash2Icon className="h-4 w-4" />
                 )}

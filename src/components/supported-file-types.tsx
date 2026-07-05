@@ -86,7 +86,7 @@ export function SupportedFileTypes() {
                 {group.extensions.map((ext) => (
                   <span
                     key={ext}
-                    className="border-border text-muted-foreground border px-2 py-0.5 font-mono text-[11px] tracking-wide uppercase"
+                    className="border-border text-muted-foreground border px-2 py-0.5 font-mono text-[0.6875rem] tracking-wide uppercase"
                   >
                     {ext}
                   </span>

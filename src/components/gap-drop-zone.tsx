@@ -1,16 +1,20 @@
 "use client";
 
+import { memo } from "react";
 import { motion } from "motion/react";
 
 const ACTIVE_HEIGHT = 56;
 const REST_HEIGHT = 10;
 
-export function GapDropZone(props: {
+// Callbacky berou index jako argument (místo closure per gap), takže rodič
+// může předávat stabilní funkce a memo() přeskočí re-render neaktivních gapů.
+export const GapDropZone = memo(function GapDropZone(props: {
+  index: number;
   isActive: boolean;
   isDragActive: boolean;
-  onActivate: () => void;
-  onDeactivate: () => void;
-  onDrop: (e: React.DragEvent) => void;
+  onActivate: (index: number) => void;
+  onDeactivate: (index: number) => void;
+  onDrop: (index: number, e: React.DragEvent) => void;
 }) {
   const height = props.isActive
     ? ACTIVE_HEIGHT
@@ -24,12 +28,12 @@ export function GapDropZone(props: {
       transition={{ type: "spring", stiffness: 500, damping: 40 }}
       onDragOver={(e) => {
         e.preventDefault();
-        if (!props.isActive) props.onActivate();
+        if (!props.isActive) props.onActivate(props.index);
       }}
-      onDragLeave={() => props.onDeactivate()}
+      onDragLeave={() => props.onDeactivate(props.index)}
       onDrop={(e) => {
         e.preventDefault();
-        props.onDrop(e);
+        props.onDrop(props.index, e);
       }}
     >
       <motion.div
@@ -46,4 +50,4 @@ export function GapDropZone(props: {
       />
     </motion.li>
   );
-}
+});

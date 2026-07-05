@@ -3,7 +3,15 @@ import { GetUserStorageUsage } from "~/server/db/queries";
 import { DRIVE_LIMIT_BYTES, DRIVE_LIMIT_MB } from "~/lib/storage-limit";
 
 export async function StorageMeter() {
-  const session = await auth();
+  // auth() vyhazuje, když request neprošel clerkMiddleware - to se stane u
+  // 404 stránek pro cesty vyloučené z proxy matcheru (statické přípony apod.),
+  // protože i ty se renderují přes root layout. Bez session meter prostě není.
+  let session: Awaited<ReturnType<typeof auth>>;
+  try {
+    session = await auth();
+  } catch {
+    return null;
+  }
   if (!session.userId) return null;
 
   const usedBytes = await GetUserStorageUsage(session.userId);

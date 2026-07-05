@@ -1,12 +1,12 @@
 "use server";
 
 import { and, eq, inArray, isNull } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 import { db } from "./db";
 import { files_table, folders_table } from "./db/schema";
 import { GetNextOrderValue } from "./db/queries";
 import { auth } from "@clerk/nextjs/server";
 import { UTApi } from "uploadthing/server";
-import { cookies } from "next/headers";
 
 const utApi = new UTApi();
 
@@ -16,15 +16,36 @@ export type ActionResult =
   | { error: string; success?: undefined }
   | { success: true; error?: undefined };
 
+export type DragItemRef = { id: number; type: "file" | "folder" };
+
 function extractFileKey(url: string) {
   return url.replace("https://49g2gpt71x.ufs.sh/f/", "");
 }
 
-async function forceRefresh() {
-  // Malý cookie trik pro force refresh
-  // Tímto způsobem zajistíme, že se stránka znovu načte, aby se změny projevily
-  const c = await cookies();
-  c.set("force-refresh", JSON.stringify(Math.random()));
+// Idiomatická náhrada dřívějšího cookie triku (nastavení náhodné cookie):
+// revalidatePath v server akci zneplatní client router cache, takže navigace
+// i router.refresh() po akci dostanou čerstvá data. Scope "layout" záměrně
+// pokrývá celý strom - mutace ovlivňují i StorageMeter v root layoutu.
+function revalidateDrive() {
+  revalidatePath("/", "layout");
+}
+
+async function getOwnedFolder(folderId: number, ownerId: string) {
+  const [folder] = await db
+    .select()
+    .from(folders_table)
+    .where(
+      and(eq(folders_table.id, folderId), eq(folders_table.ownerId, ownerId)),
+    );
+  return folder;
+}
+
+async function getOwnedFile(fileId: number, ownerId: string) {
+  const [file] = await db
+    .select()
+    .from(files_table)
+    .where(and(eq(files_table.id, fileId), eq(files_table.ownerId, ownerId)));
+  return file;
 }
 
 // Projde strom složek do hloubky (BFS) a vrátí id všech potomků (ne včetně samotné složky)
@@ -52,28 +73,44 @@ async function getDescendantFolderIds(folderId: number, ownerId: string) {
   return descendantIds;
 }
 
+// Rozbalí vybrané složky na kompletní seznam id včetně všech podsložek,
+// s deduplikací překryvů (např. když je vybraná složka i její podsložka).
+async function collectFolderSubtreeIds(folderIds: number[], ownerId: string) {
+  const descendantIdLists = await Promise.all(
+    folderIds.map((id) => getDescendantFolderIds(id, ownerId)),
+  );
+  return [...new Set([...folderIds, ...descendantIdLists.flat()])];
+}
+
+// Smaže dané soubory (řádky z DB) najednou: jeden batch do UploadThing API
+// a jeden DELETE dotaz. Ownership musí být ověřen volajícím.
+async function deleteFileRecords(
+  files: (typeof files_table.$inferSelect)[],
+) {
+  if (files.length === 0) return;
+  await utApi.deleteFiles(files.map((f) => extractFileKey(f.url)));
+  await db.delete(files_table).where(
+    inArray(
+      files_table.id,
+      files.map((f) => f.id),
+    ),
+  );
+}
+
 export async function DeleteFile(fileId: number): Promise<ActionResult> {
   const session = await auth();
   if (!session?.userId) {
     return { error: "Unauthorized" };
   }
 
-  const [file] = await db
-    .select()
-    .from(files_table)
-    .where(
-      and(eq(files_table.id, fileId), eq(files_table.ownerId, session.userId)),
-    );
-
+  const file = await getOwnedFile(fileId, session.userId);
   if (!file) {
     return { error: "File not found." };
   }
 
-  await utApi.deleteFiles([extractFileKey(file.url)]);
+  await deleteFileRecords([file]);
 
-  await db.delete(files_table).where(eq(files_table.id, fileId));
-
-  await forceRefresh();
+  revalidateDrive();
 
   return { success: true };
 }
@@ -82,7 +119,6 @@ type CreateFolderResult =
   | { error: string; success?: undefined; folderId?: undefined }
   | { success: true; folderId: number; error?: undefined };
 
-//server action that takes a name and parentId, and creates a folder with that name and parentId (don't forget to set ownerId)
 export async function CreateFolder(
   name: string,
   parentId: number,
@@ -92,32 +128,42 @@ export async function CreateFolder(
     return { error: "Unauthorized" };
   }
 
+  // Oba dotazy jsou nezávislé, běží paralelně (viz pravidlo o Promise.all).
+  const [order, folderExistsCheckName] = await Promise.all([
+    GetNextOrderValue(parentId, session.userId),
+    db
+      .select()
+      .from(folders_table)
+      .where(
+        and(
+          eq(folders_table.name, name),
+          eq(folders_table.parent, parentId),
+          eq(folders_table.ownerId, session.userId),
+        ),
+      ),
+  ]);
+
   const newFolder = {
     name,
     parent: parentId,
     ownerId: session.userId,
-    order: await GetNextOrderValue(parentId, session.userId),
-  }
-
-  const folderExistsCheckName = await db.select().from(folders_table).where(
-    and(
-      eq(folders_table.name, name),
-      eq(folders_table.parent, parentId),
-      eq(folders_table.ownerId, session.userId)
-    )
-  )
+    order,
+  };
 
   if (folderExistsCheckName.length > 0) {
     newFolder.name += " " + folderExistsCheckName.length.toString();
   }
 
-  const newFolderId = await db.insert(folders_table).values(newFolder).$returningId();
+  const newFolderId = await db
+    .insert(folders_table)
+    .values(newFolder)
+    .$returningId();
 
   if (!newFolderId || newFolderId.length === 0) {
     return { error: "Failed to create folder." };
   }
 
-  await forceRefresh();
+  revalidateDrive();
   return { success: true, folderId: newFolderId[0]!.id };
 }
 
@@ -130,35 +176,35 @@ export async function RenameFolder(
     return { error: "Unauthorized" };
   }
 
-  // Check if folder exists and belongs to user
-  const [folder] = await db
-    .select()
-    .from(folders_table)
-    .where(
-      and(eq(folders_table.id, folderId), eq(folders_table.ownerId, session.userId)),
-    );
-
+  const folder = await getOwnedFolder(folderId, session.userId);
   if (!folder) {
     return { error: "Folder not found." };
   }
+
   // Check if a folder with the new name already exists in the same parent directory
-  const parentCondition = folder.parent === null
-    ? isNull(folders_table.parent)
-    : eq(folders_table.parent, folder.parent);
+  const parentCondition =
+    folder.parent === null
+      ? isNull(folders_table.parent)
+      : eq(folders_table.parent, folder.parent);
 
-  const folderExistsCheckName = await db.select().from(folders_table).where(
-    and(
-      eq(folders_table.name, newName),
-      parentCondition,
-      eq(folders_table.ownerId, session.userId)
-    )
-  );
+  const folderExistsCheckName = await db
+    .select()
+    .from(folders_table)
+    .where(
+      and(
+        eq(folders_table.name, newName),
+        parentCondition,
+        eq(folders_table.ownerId, session.userId),
+      ),
+    );
 
-  if (folderExistsCheckName.length > 0 && folderExistsCheckName[0]!.id !== folderId) {
+  if (
+    folderExistsCheckName.length > 0 &&
+    folderExistsCheckName[0]!.id !== folderId
+  ) {
     return { error: "Folder with this name already exists in this directory." };
   }
 
-  // Update the folder name
   const updateResult = await db
     .update(folders_table)
     .set({ name: newName })
@@ -168,7 +214,46 @@ export async function RenameFolder(
     return { error: "Failed to rename folder." };
   }
 
-  await forceRefresh();
+  revalidateDrive();
+
+  return { success: true };
+}
+
+export async function RenameFile(
+  fileId: number,
+  newName: string,
+): Promise<ActionResult> {
+  const session = await auth();
+  if (!session?.userId) {
+    return { error: "Unauthorized" };
+  }
+
+  const file = await getOwnedFile(fileId, session.userId);
+  if (!file) {
+    return { error: "File not found." };
+  }
+
+  const fileExistsCheckName = await db
+    .select()
+    .from(files_table)
+    .where(
+      and(
+        eq(files_table.name, newName),
+        eq(files_table.parent, file.parent),
+        eq(files_table.ownerId, session.userId),
+      ),
+    );
+
+  if (fileExistsCheckName.length > 0 && fileExistsCheckName[0]!.id !== fileId) {
+    return { error: "File with this name already exists in this directory." };
+  }
+
+  await db
+    .update(files_table)
+    .set({ name: newName })
+    .where(eq(files_table.id, fileId));
+
+  revalidateDrive();
 
   return { success: true };
 }
@@ -179,16 +264,7 @@ export async function DeleteFolder(folderId: number): Promise<ActionResult> {
     return { error: "Unauthorized" };
   }
 
-  const [folder] = await db
-    .select()
-    .from(folders_table)
-    .where(
-      and(
-        eq(folders_table.id, folderId),
-        eq(folders_table.ownerId, session.userId),
-      ),
-    );
-
+  const folder = await getOwnedFolder(folderId, session.userId);
   if (!folder) {
     return { error: "Folder not found." };
   }
@@ -197,11 +273,10 @@ export async function DeleteFolder(folderId: number): Promise<ActionResult> {
     return { error: "Cannot delete your root folder." };
   }
 
-  const descendantFolderIds = await getDescendantFolderIds(
-    folderId,
+  const allFolderIds = await collectFolderSubtreeIds(
+    [folderId],
     session.userId,
   );
-  const allFolderIds = [folderId, ...descendantFolderIds];
 
   const filesToDelete = await db
     .select()
@@ -213,40 +288,98 @@ export async function DeleteFolder(folderId: number): Promise<ActionResult> {
       ),
     );
 
-  if (filesToDelete.length > 0) {
-    await utApi.deleteFiles(filesToDelete.map((f) => extractFileKey(f.url)));
-
-    await db.delete(files_table).where(
-      inArray(
-        files_table.id,
-        filesToDelete.map((f) => f.id),
-      ),
-    );
-  }
+  await deleteFileRecords(filesToDelete);
 
   await db.delete(folders_table).where(inArray(folders_table.id, allFolderIds));
 
-  await forceRefresh();
+  revalidateDrive();
 
   return { success: true };
 }
 
-export type DragItemRef = { id: number; type: "file" | "folder" };
+// Smaže více vybraných souborů/složek naráz (multi-select delete). Vše se
+// nejdřív zvaliduje, pak se maže dávkově: jeden batch pro UploadThing a jeden
+// DELETE na tabulku, místo sekvenčního mazání položku po položce. Překryvy
+// (vybraný soubor uvnitř vybrané složky, složka i její podsložka) se deduplikují.
+export async function DeleteItems(items: DragItemRef[]): Promise<ActionResult> {
+  const session = await auth();
+  if (!session?.userId) {
+    return { error: "Unauthorized" };
+  }
+  const ownerId = session.userId;
 
-async function getOwnedFolder(folderId: number, ownerId: string) {
-  const [folder] = await db
-    .select()
-    .from(folders_table)
-    .where(and(eq(folders_table.id, folderId), eq(folders_table.ownerId, ownerId)));
-  return folder;
-}
+  if (items.length === 0) {
+    return { error: "Nothing to delete." };
+  }
 
-async function getOwnedFile(fileId: number, ownerId: string) {
-  const [file] = await db
-    .select()
-    .from(files_table)
-    .where(and(eq(files_table.id, fileId), eq(files_table.ownerId, ownerId)));
-  return file;
+  const fileIds = items.filter((i) => i.type === "file").map((i) => i.id);
+  const folderIds = items.filter((i) => i.type === "folder").map((i) => i.id);
+
+  const [ownedFiles, ownedFolders] = await Promise.all([
+    fileIds.length > 0
+      ? db
+          .select()
+          .from(files_table)
+          .where(
+            and(
+              inArray(files_table.id, fileIds),
+              eq(files_table.ownerId, ownerId),
+            ),
+          )
+      : Promise.resolve([]),
+    folderIds.length > 0
+      ? db
+          .select()
+          .from(folders_table)
+          .where(
+            and(
+              inArray(folders_table.id, folderIds),
+              eq(folders_table.ownerId, ownerId),
+            ),
+          )
+      : Promise.resolve([]),
+  ]);
+
+  if (ownedFiles.length !== fileIds.length) {
+    return { error: "File not found." };
+  }
+  if (ownedFolders.length !== folderIds.length) {
+    return { error: "Folder not found." };
+  }
+  if (ownedFolders.some((folder) => folder.parent === null)) {
+    return { error: "Cannot delete your root folder." };
+  }
+
+  const allFolderIds =
+    folderIds.length > 0 ? await collectFolderSubtreeIds(folderIds, ownerId) : [];
+
+  const filesInFolders =
+    allFolderIds.length > 0
+      ? await db
+          .select()
+          .from(files_table)
+          .where(
+            and(
+              inArray(files_table.parent, allFolderIds),
+              eq(files_table.ownerId, ownerId),
+            ),
+          )
+      : [];
+
+  const filesById = new Map(
+    [...ownedFiles, ...filesInFolders].map((file) => [file.id, file]),
+  );
+  await deleteFileRecords([...filesById.values()]);
+
+  if (allFolderIds.length > 0) {
+    await db
+      .delete(folders_table)
+      .where(inArray(folders_table.id, allFolderIds));
+  }
+
+  revalidateDrive();
+
+  return { success: true };
 }
 
 // Přesune jednu nebo více položek (souborů/složek) do cílové složky, volitelně
@@ -266,35 +399,45 @@ export async function MoveItemsToPosition(
     return { error: "Nothing to move." };
   }
 
-  const targetFolder = await getOwnedFolder(targetParentId, ownerId);
+  // Kontrola cílové složky a validace všech přesouvaných položek jsou
+  // vzájemně nezávislé - běží paralelně místo jedné await smyčky za druhou.
+  const [targetFolder, validationErrors] = await Promise.all([
+    getOwnedFolder(targetParentId, ownerId),
+    Promise.all(
+      items.map(async (item): Promise<string | null> => {
+        if (item.type === "folder") {
+          const folder = await getOwnedFolder(item.id, ownerId);
+          if (!folder) return "Folder not found.";
+          if (folder.parent === null) {
+            return "Cannot move your root folder.";
+          }
+          if (item.id === targetParentId) {
+            return "Cannot move a folder into itself.";
+          }
+
+          const descendantFolderIds = await getDescendantFolderIds(
+            item.id,
+            ownerId,
+          );
+          if (descendantFolderIds.includes(targetParentId)) {
+            return "Cannot move a folder into one of its own subfolders.";
+          }
+          return null;
+        }
+
+        const file = await getOwnedFile(item.id, ownerId);
+        return file ? null : "File not found.";
+      }),
+    ),
+  ]);
+
   if (!targetFolder) {
     return { error: "Target folder not found." };
   }
 
-  for (const item of items) {
-    if (item.type === "folder") {
-      const folder = await getOwnedFolder(item.id, ownerId);
-      if (!folder) return { error: "Folder not found." };
-      if (folder.parent === null) {
-        return { error: "Cannot move your root folder." };
-      }
-      if (item.id === targetParentId) {
-        return { error: "Cannot move a folder into itself." };
-      }
-
-      const descendantFolderIds = await getDescendantFolderIds(
-        item.id,
-        ownerId,
-      );
-      if (descendantFolderIds.includes(targetParentId)) {
-        return {
-          error: "Cannot move a folder into one of its own subfolders.",
-        };
-      }
-    } else {
-      const file = await getOwnedFile(item.id, ownerId);
-      if (!file) return { error: "File not found." };
-    }
+  const validationError = validationErrors.find((error) => error !== null);
+  if (validationError) {
+    return { error: validationError };
   }
 
   const [siblingFolders, siblingFiles] = await Promise.all([
@@ -376,74 +519,7 @@ export async function MoveItemsToPosition(
     ),
   );
 
-  await forceRefresh();
-
-  return { success: true };
-}
-
-// Smaže více vybraných souborů/složek naráz (multi-select delete). Znovu využívá
-// DeleteFile / DeleteFolder, takže se vlastnictví, cascade a UploadThing cleanup neduplikují.
-export async function DeleteItems(items: DragItemRef[]): Promise<ActionResult> {
-  const session = await auth();
-  if (!session?.userId) {
-    return { error: "Unauthorized" };
-  }
-
-  for (const item of items) {
-    const result =
-      item.type === "file" ? await DeleteFile(item.id) : await DeleteFolder(item.id);
-    if (result.error) {
-      return result;
-    }
-  }
-
-  return { success: true };
-}
-
-export async function RenameFile(
-  fileId: number,
-  newName: string,
-): Promise<ActionResult> {
-  const session = await auth();
-  if (!session?.userId) {
-    return { error: "Unauthorized" };
-  }
-
-  const [file] = await db
-    .select()
-    .from(files_table)
-    .where(
-      and(eq(files_table.id, fileId), eq(files_table.ownerId, session.userId)),
-    );
-
-  if (!file) {
-    return { error: "File not found." };
-  }
-
-  const fileExistsCheckName = await db
-    .select()
-    .from(files_table)
-    .where(
-      and(
-        eq(files_table.name, newName),
-        eq(files_table.parent, file.parent),
-        eq(files_table.ownerId, session.userId),
-      ),
-    );
-
-  if (
-    fileExistsCheckName.length > 0 &&
-    fileExistsCheckName[0]!.id !== fileId
-  ) {
-    return { error: "File with this name already exists in this directory." };
-  }
-
-  await db
-    .update(files_table)
-    .set({ name: newName })
-    .where(eq(files_table.id, fileId));
-
-  await forceRefresh();
+  revalidateDrive();
 
   return { success: true };
 }

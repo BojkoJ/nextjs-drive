@@ -15,7 +15,7 @@ https://bojko-drive.netlify.app/
 
 #### Requirements:
 
-- [Node.js (v18+)](https://nodejs.org/en/download)
+- [Node.js](https://nodejs.org/en/download)
 - [pnpm](https://pnpm.io/installation)
 - [Git](https://git-scm.com/downloads)
 
@@ -45,7 +45,7 @@ https://bojko-drive.netlify.app/
 
 ## Tech Stack:
 
-- [Next.js 15](https://nextjs.org/)
+- [Next.js 16](https://nextjs.org/)
 - [TypeScript](https://www.typescriptlang.org/)
 - [TailwindCSS](https://tailwindcss.com/)
 - [ShadCN/UI](https://ui.shadcn.com/)

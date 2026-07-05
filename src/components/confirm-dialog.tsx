@@ -1,7 +1,7 @@
 "use client";
 
-import { Loader2Icon } from "lucide-react";
 import { Button } from "~/components/ui/button";
+import { Spinner } from "~/components/ui/spinner";
 import {
   Dialog,
   DialogContent,
@@ -43,7 +43,7 @@ export function ConfirmDialog(props: {
             disabled={props.isConfirming}
           >
             {props.isConfirming && (
-              <Loader2Icon className="h-3.5 w-3.5 animate-spin" />
+              <Spinner className="h-3.5 w-3.5" />
             )}
             {props.confirmLabel ?? "Delete"}
           </Button>

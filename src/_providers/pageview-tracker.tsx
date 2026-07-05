@@ -1,3 +1,5 @@
+"use client";
+
 import { useUser } from "@clerk/nextjs";
 import { usePathname, useSearchParams } from "next/navigation";
 import { usePostHog } from "posthog-js/react";
@@ -10,16 +12,18 @@ export default function PostHogPageView() {
   const pathname = usePathname();
 
   // Trackuje identifikaci uživatele pomocí PostHog
-  // Tento efekt se spouští při přihlášení nebo odhlášení uživatele a aktualizuje profil uživatele v PostHog
+  // Tento efekt se spouští při přihlášení nebo odhlášení uživatele a aktualizuje profil uživatele v PostHog.
+  // Závislosti jsou primitivy (id, email), ne celý user objekt - efekt se tak
+  // nespouští při každé nesouvisející změně profilu (viz pravidlo o narrow deps).
+  const userId = userInfo.user?.id;
+  const userEmail = userInfo.user?.emailAddresses[0]?.emailAddress;
   useEffect(() => {
-    if (userInfo.user?.id) {
-      posthog.identify(userInfo.user?.id, {
-        email: userInfo.user?.emailAddresses[0]?.emailAddress,
-      });
+    if (userId) {
+      posthog.identify(userId, { email: userEmail });
     } else {
       posthog.reset();
     }
-  }, [posthog, userInfo.user]);
+  }, [posthog, userId, userEmail]);
 
   // Trackuje návštěvy stránek pomocí PostHog
   useEffect(() => {

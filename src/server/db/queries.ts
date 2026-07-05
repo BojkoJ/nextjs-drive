@@ -90,28 +90,47 @@ export async function GetNextOrderValue(parentId: number, ownerId: string) {
   return orders.length === 0 ? 0 : Math.max(...orders) + 1;
 }
 
-// Sečte velikost všech souborů ve složce a rekurzivně ve všech jejích podsložkách.
-export async function GetFolderSize(folderId: number) {
-  let total = 0;
-  let currentLevel = [folderId];
+// Sečte velikost všech souborů rekurzivně pro KAŽDOU z předaných složek najednou.
+// Jeden společný BFS průchod přes všechny podstromy: 2 dotazy na úroveň hloubky
+// celkem, místo 2 dotazů na úroveň za každou složku zvlášť (N+1 problém).
+export async function GetFolderSizes(folderIds: number[]) {
+  const totals: Record<number, number> = {};
+  if (folderIds.length === 0) return totals;
 
-  while (currentLevel.length > 0) {
+  for (const id of folderIds) totals[id] = 0;
+
+  // Mapa: id složky v aktuální úrovni -> id kořenové složky (z folderIds),
+  // do jejíhož součtu se mají soubory pod ní započítat.
+  let level = new Map<number, number>(folderIds.map((id) => [id, id]));
+
+  while (level.size > 0) {
+    const parentIds = [...level.keys()];
     const [files, childFolders] = await Promise.all([
       db
-        .select({ size: filesSchema.size })
+        .select({ parent: filesSchema.parent, size: filesSchema.size })
         .from(filesSchema)
-        .where(inArray(filesSchema.parent, currentLevel)),
+        .where(inArray(filesSchema.parent, parentIds)),
       db
-        .select({ id: foldersSchema.id })
+        .select({ id: foldersSchema.id, parent: foldersSchema.parent })
         .from(foldersSchema)
-        .where(inArray(foldersSchema.parent, currentLevel)),
+        .where(inArray(foldersSchema.parent, parentIds)),
     ]);
 
-    total += files.reduce((sum, f) => sum + f.size, 0);
-    currentLevel = childFolders.map((f) => f.id);
+    for (const file of files) {
+      const rootId = level.get(file.parent);
+      if (rootId !== undefined) totals[rootId] = (totals[rootId] ?? 0) + file.size;
+    }
+
+    const nextLevel = new Map<number, number>();
+    for (const child of childFolders) {
+      if (child.parent === null) continue;
+      const rootId = level.get(child.parent);
+      if (rootId !== undefined) nextLevel.set(child.id, rootId);
+    }
+    level = nextLevel;
   }
 
-  return total;
+  return totals;
 }
 
 // Celkové využití úložiště napříč všemi složkami uživatele (pro limit v navigaci).

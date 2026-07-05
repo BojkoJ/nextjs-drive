@@ -1,20 +1,17 @@
+"use client";
+
 import Link, { useLinkStatus } from "next/link";
+import { memo, useRef, useState } from "react";
 import { motion } from "motion/react";
 
-import {
-  CheckIcon,
-  GripVerticalIcon,
-  Loader2Icon,
-  PencilIcon,
-  Trash2Icon,
-  XIcon,
-} from "lucide-react";
+import { CheckIcon, GripVerticalIcon, PencilIcon, Trash2Icon, XIcon } from "lucide-react";
 import type { files_table, folders_table } from "~/server/db/schema";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
-import { RenameFile, RenameFolder } from "~/server/actions";
-import { useState, useEffect, useRef, useTransition } from "react";
-import { toast } from "sonner";
+import { Spinner } from "./ui/spinner";
+import { RenameFile, RenameFolder, type DragItemRef } from "~/server/actions";
+import { useRename, type UseRenameReturn } from "~/hooks/use-rename";
+import type { FolderDropTargetHandlers } from "~/hooks/use-drive-dnd";
 import { FileTypeIcon } from "~/lib/file-icons";
 import { formatFileSize } from "~/lib/format-size";
 import { AnimatedFolderIcon } from "./animated-folder-icon";
@@ -32,10 +29,6 @@ function nativeDragHandler(
     | undefined;
 }
 
-// Native `draggable` on the row would let a drag start from anywhere on it.
-// To restrict dragging to this handle, the row keeps draggable=false until
-// this handle reports mousedown, and the row flips it back off on drag end
-// (a real drag happened) or this handle's own mouseup (just a click, no drag).
 const LONG_NAME_THRESHOLD = 40;
 
 // Past the threshold, a name would otherwise spill past the Name column into
@@ -73,139 +66,185 @@ function DragHandle(props: {
   );
 }
 
-export function FileRow(props: {
+// Native `draggable` on the row would let a drag start from anywhere on it.
+// To restrict dragging to this handle, the row keeps draggable=false until
+// this handle reports mousedown, and the row flips it back off on drag end
+// (a real drag happened) or this handle's own mouseup (just a click, no drag).
+function useDragArmed() {
+  const [dragArmed, setDragArmed] = useState(false);
+  return {
+    dragArmed,
+    arm: () => setDragArmed(true),
+    disarm: () => setDragArmed(false),
+  };
+}
+
+function rowClassName(opts: {
+  last: boolean;
+  isDeleting: boolean;
+  isDropTarget?: boolean;
+}) {
+  return [
+    "hover:bg-accent/50 flex items-center gap-2 px-3 py-4 font-mono text-sm transition-opacity sm:gap-4 sm:px-6",
+    opts.last ? "" : "border-border border-b",
+    opts.isDeleting ? "pointer-events-none opacity-50" : "",
+    opts.isDropTarget ? "bg-primary/10 ring-primary ring-2 ring-inset" : "",
+  ].join(" ");
+}
+
+// Sdílený edit mód řádku: input + potvrzovací/zrušící tlačítka nad useRename.
+// inputRef jde zvlášť (ne uvnitř rename objektu) kvůli react-hooks/refs pravidlu.
+function RenameEditor({
+  icon,
+  rename,
+  inputRef,
+}: {
+  icon: React.ReactNode;
+  rename: UseRenameReturn;
+  inputRef: React.RefObject<HTMLInputElement | null>;
+}) {
+  return (
+    <div className="flex w-full items-center">
+      {icon}
+      <input
+        ref={inputRef}
+        type="text"
+        value={rename.draft}
+        onChange={(e) => rename.setDraft(e.target.value)}
+        onKeyDown={rename.handleKeyDown}
+        disabled={rename.isSaving}
+        className="border-border bg-input text-foreground focus:border-primary w-2/3 border px-2 py-1 font-mono focus:outline-none disabled:opacity-50"
+      />
+      <div className="ml-2 flex gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={rename.save}
+          disabled={rename.isSaving}
+          className="hover:bg-primary/20 hover:text-primary h-6 w-6 cursor-pointer p-0"
+        >
+          {rename.isSaving ? (
+            <Spinner className="h-3.5 w-3.5" />
+          ) : (
+            <CheckIcon className="h-3.5 w-3.5" />
+          )}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={rename.cancel}
+          disabled={rename.isSaving}
+          className="hover:bg-destructive/10 hover:text-destructive h-6 w-6 cursor-pointer p-0"
+        >
+          <XIcon className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// Sdílená akční tlačítka řádku (tužka + koš).
+function RowActions(props: {
+  itemLabel: "file" | "folder";
+  isDeleting: boolean;
+  onRename: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={props.onRename}
+        aria-label={`Rename ${props.itemLabel}`}
+        className="hover:bg-primary/10 hover:text-primary cursor-pointer"
+      >
+        <PencilIcon className="h-4.5 w-4.5" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+        onClick={props.onDelete}
+        disabled={props.isDeleting}
+        aria-label={`Delete ${props.itemLabel}`}
+      >
+        {props.isDeleting ? (
+          <Spinner className="h-5 w-5" />
+        ) : (
+          <Trash2Icon className="h-5 w-5" />
+        )}
+      </Button>
+    </>
+  );
+}
+
+// memo(): řádek se překreslí jen když se změní jeho vlastní data/stav, ne při
+// každé změně výběru či drag stavu jinde v seznamu. Všechny callback props
+// proto musí být stabilní - berou identitu položky jako argument, místo aby
+// ji rodič zavíral do inline closure.
+//
+// listIndex se v renderu nepoužívá - je tu jen proto, aby memo řádek
+// překreslil, když se změní jeho pozice v seznamu. Motion `layout` (FLIP)
+// animace přeuspořádání běží pouze při re-renderu, takže bez tohoto propu
+// by řádky po drag & drop reorderu na nové místo skočily bez animace.
+export const FileRow = memo(function FileRow(props: {
   file: typeof files_table.$inferSelect;
+  listIndex: number;
   last?: boolean;
   isDeleting?: boolean;
   isSelected?: boolean;
-  onToggleSelect?: () => void;
-  onRequestDelete: () => void;
+  onToggleSelect: (item: DragItemRef) => void;
+  onRequestDelete: (file: typeof files_table.$inferSelect) => void;
   draggable?: boolean;
-  onDragStart?: (e: React.DragEvent) => void;
-  onDragEnd?: (e: React.DragEvent) => void;
+  onDragStart: (e: React.DragEvent, item: DragItemRef) => void;
+  onDragEnd: () => void;
 }) {
   const { file, last = false, isDeleting = false } = props;
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [fileName, setFileName] = useState(file.name);
-  const [isSaving, startSaveTransition] = useTransition();
+  const drag = useDragArmed();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [dragArmed, setDragArmed] = useState(false);
 
-  // Keep the displayed name in sync with genuinely external changes, but
-  // never while the user has this row open for editing (see FolderRow).
-  const [prevFileNameProp, setPrevFileNameProp] = useState(file.name);
-  if (file.name !== prevFileNameProp) {
-    setPrevFileNameProp(file.name);
-    if (!isEditMode) {
-      setFileName(file.name);
-    }
-  }
+  const rename = useRename({
+    name: file.name,
+    fallbackError: "Failed to rename file",
+    action: (newName) => RenameFile(file.id, newName),
+    inputRef,
+  });
 
-  useEffect(() => {
-    if (isEditMode && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
-    }
-  }, [isEditMode]);
-
-  const handleSave = () => {
-    if (fileName.trim() === "") {
-      setFileName(file.name);
-      return;
-    }
-
-    startSaveTransition(async () => {
-      try {
-        const result = await RenameFile(file.id, fileName.trim());
-        if (result.error) {
-          toast.error(result.error);
-          setFileName(file.name);
-        }
-      } catch {
-        toast.error("Failed to rename file");
-        setFileName(file.name);
-      }
-
-      setIsEditMode(false);
-    });
-  };
-
-  const handleCancel = () => {
-    setFileName(file.name);
-    setIsEditMode(false);
-  };
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleSave();
-    } else if (e.key === "Escape") {
-      handleCancel();
-    }
-  };
+  const itemRef: DragItemRef = { id: file.id, type: "file" };
 
   return (
     <motion.li
       key={file.id}
       layout
       transition={{ type: "spring", stiffness: 500, damping: 40 }}
-      draggable={props.draggable && dragArmed}
-      onDragStart={nativeDragHandler(props.onDragStart)}
-      onDragEnd={nativeDragHandler((e) => {
-        setDragArmed(false);
-        props.onDragEnd?.(e);
+      draggable={props.draggable && drag.dragArmed}
+      onDragStart={nativeDragHandler((e) => props.onDragStart(e, itemRef))}
+      onDragEnd={nativeDragHandler(() => {
+        drag.disarm();
+        props.onDragEnd();
       })}
-      className={`hover:bg-accent/50 flex items-center gap-2 px-3 py-4 font-mono text-sm transition-opacity sm:gap-4 sm:px-6 ${last ? "" : "border-border border-b"} ${isDeleting ? "pointer-events-none opacity-50" : ""}`}
+      className={rowClassName({ last, isDeleting })}
     >
       <Checkbox
         checked={!!props.isSelected}
-        onCheckedChange={() => props.onToggleSelect?.()}
+        onCheckedChange={() => props.onToggleSelect(itemRef)}
         aria-label={`Select ${file.name}`}
       />
-      <DragHandle
-        onMouseDown={() => setDragArmed(true)}
-        onMouseUp={() => setDragArmed(false)}
-      />
+      <DragHandle onMouseDown={drag.arm} onMouseUp={drag.disarm} />
       <div className="flex min-w-0 flex-1 items-center gap-2 sm:grid sm:grid-cols-12 sm:gap-4">
         <div className="flex min-w-0 flex-1 items-center sm:col-span-5">
-          {isEditMode ? (
-            <div className="flex w-full items-center">
-              <FileTypeIcon
-                name={file.name}
-                className="mr-3 text-xl leading-none"
-              />
-              <input
-                ref={inputRef}
-                type="text"
-                value={fileName}
-                onChange={(e) => setFileName(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={isSaving}
-                className="border-border bg-input text-foreground focus:border-primary w-2/3 border px-2 py-1 font-mono focus:outline-none disabled:opacity-50"
-              />
-              <div className="ml-2 flex gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="hover:bg-primary/20 hover:text-primary h-6 w-6 cursor-pointer p-0"
-                >
-                  {isSaving ? (
-                    <Loader2Icon className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <CheckIcon className="h-3.5 w-3.5" />
-                  )}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCancel}
-                  disabled={isSaving}
-                  className="hover:bg-destructive/10 hover:text-destructive h-6 w-6 cursor-pointer p-0"
-                >
-                  <XIcon className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </div>
+          {rename.isEditMode ? (
+            <RenameEditor
+              rename={rename}
+              inputRef={inputRef}
+              icon={
+                <FileTypeIcon
+                  name={file.name}
+                  className="mr-3 text-xl leading-none"
+                />
+              }
+            />
           ) : (
             <Link
               href={`/file/${file.id}`}
@@ -219,49 +258,30 @@ export function FileRow(props: {
               {/* Render the just-saved local name, not the file.name prop:
                   the prop only updates once the background refresh lands,
                   which would otherwise flash the pre-rename name for a beat. */}
-              <ScrollableName name={fileName} />
+              <ScrollableName name={rename.draft} />
             </Link>
           )}
         </div>
         <div className="text-muted-foreground hidden sm:col-span-3 sm:block">
-          {"File"}
+          File
         </div>
         <div className="text-muted-foreground shrink-0 text-xs whitespace-nowrap sm:col-span-2 sm:text-sm">
           {formatFileSize(file.size)}
         </div>
         <div className="text-muted-foreground flex shrink-0 items-center sm:col-span-2">
-          {!isEditMode && (
-            <>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsEditMode(true)}
-                aria-label="Rename file"
-                className="hover:bg-primary/10 hover:text-primary cursor-pointer"
-              >
-                <PencilIcon className="h-4.5 w-4.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="hover:bg-destructive/10 hover:text-destructive cursor-pointer"
-                onClick={props.onRequestDelete}
-                disabled={isDeleting}
-                aria-label="Delete file"
-              >
-                {isDeleting ? (
-                  <Loader2Icon className="h-5 w-5 animate-spin" />
-                ) : (
-                  <Trash2Icon className="h-5 w-5" />
-                )}
-              </Button>
-            </>
+          {!rename.isEditMode && (
+            <RowActions
+              itemLabel="file"
+              isDeleting={isDeleting}
+              onRename={() => rename.startEditing()}
+              onDelete={() => props.onRequestDelete(file)}
+            />
           )}
         </div>
       </div>
     </motion.li>
   );
-}
+});
 
 function FolderLinkIcon(props: { isDropTarget?: boolean }) {
   const { pending } = useLinkStatus();
@@ -273,167 +293,89 @@ function FolderLinkIcon(props: { isDropTarget?: boolean }) {
   );
 }
 
-export function FolderRow(props: {
+// listIndex: viz komentář u FileRow - invaliduje memo při změně pozice,
+// aby proběhla motion layout animace přeuspořádání.
+export const FolderRow = memo(function FolderRow(props: {
   folder: typeof folders_table.$inferSelect;
   size: number;
+  listIndex: number;
   last?: boolean;
   isEditing?: boolean;
   onEditComplete?: () => void;
   isDeleting?: boolean;
   isSelected?: boolean;
-  onToggleSelect?: () => void;
-  onRequestDelete: () => void;
+  onToggleSelect: (item: DragItemRef) => void;
+  onRequestDelete: (folder: typeof folders_table.$inferSelect) => void;
   draggable?: boolean;
-  onDragStart?: (e: React.DragEvent) => void;
-  onDragEnd?: (e: React.DragEvent) => void;
-  onDragOver?: (e: React.DragEvent) => void;
-  onDragLeave?: (e: React.DragEvent) => void;
-  onDrop?: (e: React.DragEvent) => void;
+  onDragStart: (e: React.DragEvent, item: DragItemRef) => void;
+  onDragEnd: () => void;
   isDropTarget?: boolean;
+  dropTarget: FolderDropTargetHandlers;
 }) {
-  const {
-    folder,
-    last = false,
-    isEditing = false,
-    onEditComplete,
-    isDeleting = false,
-  } = props;
-  const [isEditMode, setIsEditMode] = useState(isEditing);
-  const [folderName, setFolderName] = useState(folder.name);
-  const [isSaving, startSaveTransition] = useTransition();
+  const { folder, last = false, isEditing = false, isDeleting = false } = props;
+  const drag = useDragArmed();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [dragArmed, setDragArmed] = useState(false);
 
+  const rename = useRename({
+    name: folder.name,
+    initiallyEditing: isEditing,
+    fallbackError: "Failed to rename folder",
+    action: (newName) => RenameFolder(folder.id, newName),
+    onEditComplete: props.onEditComplete,
+    inputRef,
+  });
+
+  // Externě spuštěná editace (právě vytvořená složka): render-phase sync,
+  // ať se edit mód otevře bez čekání na efekt a input dostane serverový název.
   const [prevIsEditing, setPrevIsEditing] = useState(isEditing);
   if (isEditing !== prevIsEditing) {
     setPrevIsEditing(isEditing);
     if (isEditing) {
-      setIsEditMode(true);
-      setFolderName(folder.name);
+      rename.startEditing(true);
     }
   }
 
-  // Keep the displayed name in sync with genuinely external changes (e.g. a
-  // refresh from another tab), but never while the user has this row open
-  // for editing, since that would stomp on what they're currently typing.
-  const [prevFolderNameProp, setPrevFolderNameProp] = useState(folder.name);
-  if (folder.name !== prevFolderNameProp) {
-    setPrevFolderNameProp(folder.name);
-    if (!isEditMode) {
-      setFolderName(folder.name);
-    }
-  }
-
-  useEffect(() => {
-    if (isEditMode && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
-    }
-  }, [isEditMode]);
-
-  const handleSave = () => {
-    if (folderName.trim() === "") {
-      setFolderName(folder.name);
-      return;
-    }
-
-    startSaveTransition(async () => {
-      try {
-        const result = await RenameFolder(folder.id, folderName.trim());
-        if (result.error) {
-          toast.error(result.error);
-          setFolderName(folder.name);
-        }
-      } catch {
-        toast.error("Failed to rename folder");
-        setFolderName(folder.name);
-      }
-
-      setIsEditMode(false);
-      onEditComplete?.();
-    });
-  };
-
-  const handleCancel = () => {
-    setFolderName(folder.name);
-    setIsEditMode(false);
-    onEditComplete?.();
-  };
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleSave();
-    } else if (e.key === "Escape") {
-      handleCancel();
-    }
-  };
+  const itemRef: DragItemRef = { id: folder.id, type: "folder" };
 
   return (
     <motion.li
       key={folder.id}
       layout
       transition={{ type: "spring", stiffness: 500, damping: 40 }}
-      draggable={props.draggable && dragArmed}
-      onDragStart={nativeDragHandler(props.onDragStart)}
-      onDragEnd={nativeDragHandler((e) => {
-        setDragArmed(false);
-        props.onDragEnd?.(e);
+      draggable={props.draggable && drag.dragArmed}
+      onDragStart={nativeDragHandler((e) => props.onDragStart(e, itemRef))}
+      onDragEnd={nativeDragHandler(() => {
+        drag.disarm();
+        props.onDragEnd();
       })}
-      onDragOver={props.onDragOver}
-      onDragLeave={props.onDragLeave}
-      onDrop={props.onDrop}
-      className={`hover:bg-accent/50 flex items-center gap-2 px-3 py-4 font-mono text-sm transition-opacity sm:gap-4 sm:px-6 ${last ? "" : "border-border border-b"} ${isDeleting ? "pointer-events-none opacity-50" : ""} ${props.isDropTarget ? "bg-primary/10 ring-primary ring-2 ring-inset" : ""}`}
+      onDragOver={(e) => props.dropTarget.onDragOver(e, folder.id)}
+      onDragLeave={() => props.dropTarget.onDragLeave(folder.id)}
+      onDrop={(e) => props.dropTarget.onDrop(e, folder.id)}
+      className={rowClassName({
+        last,
+        isDeleting,
+        isDropTarget: props.isDropTarget,
+      })}
     >
       <Checkbox
         checked={!!props.isSelected}
-        onCheckedChange={() => props.onToggleSelect?.()}
+        onCheckedChange={() => props.onToggleSelect(itemRef)}
         aria-label={`Select ${folder.name}`}
       />
-      <DragHandle
-        onMouseDown={() => setDragArmed(true)}
-        onMouseUp={() => setDragArmed(false)}
-      />
+      <DragHandle onMouseDown={drag.arm} onMouseUp={drag.disarm} />
       <div className="flex min-w-0 flex-1 items-center gap-2 sm:grid sm:grid-cols-12 sm:gap-4">
         <div className="flex min-w-0 flex-1 items-center sm:col-span-5">
-          {isEditMode ? (
-            <div className="flex w-full items-center">
-              <AnimatedFolderIcon
-                isOpen
-                className="mr-3 text-xl leading-none"
-              />
-              <input
-                ref={inputRef}
-                type="text"
-                value={folderName}
-                onChange={(e) => setFolderName(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={isSaving}
-                className="border-border bg-input text-foreground focus:border-primary w-2/3 border px-2 py-1 font-mono focus:outline-none disabled:opacity-50"
-              />
-              <div className="ml-2 flex gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="hover:bg-primary/20 hover:text-primary h-6 w-6 cursor-pointer p-0"
-                >
-                  {isSaving ? (
-                    <Loader2Icon className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <CheckIcon className="h-3.5 w-3.5" />
-                  )}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCancel}
-                  disabled={isSaving}
-                  className="hover:bg-destructive/10 hover:text-destructive h-6 w-6 cursor-pointer p-0"
-                >
-                  <XIcon className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </div>
+          {rename.isEditMode ? (
+            <RenameEditor
+              rename={rename}
+              inputRef={inputRef}
+              icon={
+                <AnimatedFolderIcon
+                  isOpen
+                  className="mr-3 text-xl leading-none"
+                />
+              }
+            />
           ) : (
             <Link
               href={`/f/${folder.id}`}
@@ -444,7 +386,7 @@ export function FolderRow(props: {
               {/* Render the just-saved local name, not the folder.name prop:
                   the prop only updates once the background refresh lands,
                   which would otherwise flash the pre-rename name for a beat. */}
-              <ScrollableName name={folderName} />
+              <ScrollableName name={rename.draft} />
             </Link>
           )}
         </div>
@@ -455,35 +397,16 @@ export function FolderRow(props: {
           {formatFileSize(props.size)}
         </div>
         <div className="text-muted-foreground flex shrink-0 items-center sm:col-span-2">
-          {!isEditMode && (
-            <>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsEditMode(true)}
-                aria-label="Rename folder"
-                className="hover:bg-primary/10 hover:text-primary cursor-pointer"
-              >
-                <PencilIcon className="h-4.5 w-4.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="hover:bg-destructive/10 hover:text-destructive cursor-pointer"
-                onClick={props.onRequestDelete}
-                disabled={isDeleting}
-                aria-label="Delete folder"
-              >
-                {isDeleting ? (
-                  <Loader2Icon className="h-5 w-5 animate-spin" />
-                ) : (
-                  <Trash2Icon className="h-5 w-5" />
-                )}
-              </Button>
-            </>
+          {!rename.isEditMode && (
+            <RowActions
+              itemLabel="folder"
+              isDeleting={isDeleting}
+              onRename={() => rename.startEditing()}
+              onDelete={() => props.onRequestDelete(folder)}
+            />
           )}
         </div>
       </div>
     </motion.li>
   );
-}
+});

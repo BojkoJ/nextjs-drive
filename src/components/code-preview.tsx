@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { PrismAsyncLight as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { Loader2Icon } from "lucide-react";
+import { Spinner } from "~/components/ui/spinner";
 import { getCodeLanguage } from "~/lib/file-icons";
 
 type FetchResult =
@@ -48,7 +48,7 @@ export function CodePreview(props: { name: string; url: string }) {
   if (!current) {
     return (
       <div className="flex h-[70vh] w-full items-center justify-center border border-border bg-background text-muted-foreground">
-        <Loader2Icon className="h-6 w-6 animate-spin" />
+        <Spinner className="h-6 w-6" />
       </div>
     );
   }
