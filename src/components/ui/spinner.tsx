@@ -8,9 +8,12 @@ export function Spinner(props: { className?: string }) {
   return (
     <span
       aria-hidden
-      className={cn("inline-flex shrink-0 animate-spin", props.className)}
+      className={cn(
+        "inline-flex shrink-0 animate-spin items-center justify-center",
+        props.className,
+      )}
     >
-      <Loader2Icon className="h-full w-full" />
+      <Loader2Icon className="size-full" />
     </span>
   );
 }
