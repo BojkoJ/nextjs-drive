@@ -11,10 +11,8 @@ export default function PostHogPageView() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
-  // Trackuje identifikaci uživatele pomocí PostHog
-  // Tento efekt se spouští při přihlášení nebo odhlášení uživatele a aktualizuje profil uživatele v PostHog.
-  // Závislosti jsou primitivy (id, email), ne celý user objekt - efekt se tak
-  // nespouští při každé nesouvisející změně profilu (viz pravidlo o narrow deps).
+  // Trackuje identifikaci uživatele v PostHog - efekt se spouští při přihlášení nebo odhlášení a aktualizuje profil uživatele.
+  // Závislosti jsou primitivy (id, email), ne celý user objekt, takže se efekt nespouští při každé nesouvisející změně profilu.
   const userId = userInfo.user?.id;
   const userEmail = userInfo.user?.emailAddresses[0]?.emailAddress;
   useEffect(() => {

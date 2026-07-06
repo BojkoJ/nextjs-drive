@@ -33,8 +33,7 @@ export function CodePreview(props: { name: string; url: string }) {
     };
   }, [props.url]);
 
-  // If the url changed since the last completed fetch, treat the old result
-  // as stale (loading) rather than flashing content from a different file.
+  // Pokud se url od posledního dokončeného fetch změnila, bereme starý výsledek jako zastaralý (loading), místo abychom bleskli obsah jiného souboru.
   const current = result?.url === props.url ? result : null;
 
   if (current?.failed) {

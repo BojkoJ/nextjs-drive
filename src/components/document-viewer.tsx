@@ -3,10 +3,8 @@
 import dynamic from "next/dynamic";
 import "@iamjariwala/react-doc-viewer/dist/index.css";
 
-// The library touches browser-only APIs at module scope, so it can't be
-// statically imported into a component that gets server-rendered even once
-// (SSR of a "use client" component still runs on the server for the initial
-// HTML). next/dynamic with ssr:false defers the import itself to the client.
+// Knihovna sahá na browser-only API už na úrovni modulu, takže ji nejde staticky importovat do komponenty, která se aspoň jednou server-renderuje.
+// (SSR "use client" komponenty pořád běží na serveru pro první HTML). next/dynamic s ssr:false proto odloží samotný import až na klienta.
 export const DocumentViewer = dynamic(
   () =>
     import("@iamjariwala/react-doc-viewer").then((mod) => {

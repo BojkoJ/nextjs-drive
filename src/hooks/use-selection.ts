@@ -4,8 +4,7 @@ import { useCallback, useState } from "react";
 import type { DragItemRef } from "~/server/actions";
 import { keyOf } from "~/lib/item-key";
 
-// Multi-select stav seznamu (checkboxy). Všechny vrácené callbacky jsou
-// stabilní (funkční setState), takže nerozbíjejí memo() na řádcích.
+// Multi-select stav seznamu (checkboxy). Všechny vrácené callbacky jsou stabilní (funkční setState), takže nerozbíjejí memo() na řádcích.
 export function useSelection() {
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
 

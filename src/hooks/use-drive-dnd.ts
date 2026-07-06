@@ -4,8 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import type { DragItemRef } from "~/server/actions";
 import { useLatest } from "~/hooks/use-latest";
 
-// Stabilní trojice handlerů pro složku jako drop target (řádek složky,
-// breadcrumb). Řádky si z nich uvnitř vytvoří vlastní DOM handlery se svým id.
+// Stabilní trojice handlerů pro složku jako drop target (řádek složky, breadcrumb). Řádky si z nich uvnitř vytvoří vlastní DOM handlery se svým id.
 export type FolderDropTargetHandlers = {
   onDragOver: (e: React.DragEvent, folderId: number) => void;
   onDragLeave: (folderId: number) => void;
@@ -22,15 +21,11 @@ function readDragPayload(e: React.DragEvent): DragItemRef[] | null {
   }
 }
 
-// Kompletní stavová mašina HTML5 drag & dropu pro drive: kdo se táhne,
-// který gap/složka je aktivní drop target a badge pro multi-item drag.
-// Callbacky z opts čtou čerstvý stav komponenty, proto jdou přes useLatest ref
-// - všechny handlery, které hook vrací, tak zůstávají stabilní pro memo() na řádcích.
+// Kompletní stavová mašina HTML5 drag & dropu pro drive: kdo se táhne, který gap/složka je aktivní drop target a badge pro multi-item drag.
+// Callbacky z opts čtou čerstvý stav komponenty, proto jdou přes useLatest ref - všechny handlery, které hook vrací, tak zůstávají stabilní pro memo() na řádcích.
 export function useDriveDnd(opts: {
   currentFolderId: number;
-  // Off-screen element pro custom drag preview u multi-item dragů; vlastní ho
-  // komponenta (ref vracený z hooku by "nakazil" návratový objekt pro
-  // react-hooks/refs lint pravidlo).
+  // Off-screen element pro custom drag preview u multi-item dragů; vlastní ho komponenta (ref vracený z hooku by "nakazil" návratový objekt pro react-hooks/refs pravidlo).
   dragBadgeRef: React.RefObject<HTMLDivElement | null>;
   // Co se vlastně táhne, když drag začne na dané položce (multi-select apod.)
   getDragPayload: (item: DragItemRef) => DragItemRef[];
@@ -48,8 +43,7 @@ export function useDriveDnd(opts: {
 
   const latestOpts = useLatest(opts);
 
-  // Drop na jinou složku odstraní tažený řádek z optimistického seznamu dřív,
-  // než k němu stihne doletět nativní dragend.
+  // Drop na jinou složku odstraní tažený řádek z optimistického seznamu dřív, než k němu stihne doletět nativní dragend.
   // Reset se proto dělá i přímo při dropu, aby se gaps sbalily, i když zdrojový řádek už neexistuje.
   const resetDragUiState = useCallback(() => {
     setIsDraggingAny(false);

@@ -34,7 +34,7 @@ export default function RootLayout({
       <html lang="en" className={`dark ${geist.variable}`}>
         <body>
           <PostHogProvider>
-            {/* Header */}
+            {/* Hlavička */}
             <header className="sticky top-0 z-20 border-b border-border bg-background">
               <div className="container mx-auto flex items-center justify-between px-4 py-3.5">
                 <Link href="/" className="flex items-center gap-2.5">

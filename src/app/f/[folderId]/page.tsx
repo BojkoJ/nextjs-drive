@@ -39,16 +39,13 @@ export default async function GoogleDriveClone(props: {
     return <FolderNotFoundScreen />;
   }
 
-  // JSX must not be constructed inside the try block: rendering happens
-  // later (outside this function), so a try/catch here only guards the
-  // data fetching below, not the DriveContent render.
+  // JSX se nesmí sestavovat uvnitř try bloku - vykreslení proběhne až mimo tuto funkci, takže try/catch tady hlídá jen fetch dat níže, ne render DriveContent.
   let folders: Awaited<ReturnType<typeof GetFolders>>;
   let files: Awaited<ReturnType<typeof GetFiles>>;
   let parents: Awaited<ReturnType<typeof getAllParentsForFolder>>;
 
   try {
-    // Počkáme na všechny Promisy paralelně místo sekvenčně - žádný dotaz
-    // nezávisí na výsledku jiného, takže čekáme jen na ten nejpomalejší.
+    // Počkáme na všechny Promisy paralelně místo sekvenčně - žádný dotaz nezávisí na výsledku jiného, takže čekáme jen na ten nejpomalejší.
     [folders, files, parents] = await Promise.all([
       GetFolders(parsedFolderId),
       GetFiles(parsedFolderId),

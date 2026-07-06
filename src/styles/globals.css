@@ -127,22 +127,16 @@
   }
 }
 
-/* The whole UI is built on Tailwind's rem-based utilities, so bumping the
-   root font-size scales text, padding, gaps and radii together, the same
-   way a 150% browser zoom would. Only applies past 1920px width, so
-   1920x1080 / 1920x1200 monitors (and anything narrower) are untouched;
-   wider screens (2560, 4K, ultrawide, etc) get the "already zoomed" look
-   without the user having to zoom in themselves. */
+/* Celé UI je postavené na Tailwindových rem-based utilitách, takže zvětšení root font-size škáluje text, padding, gapy a radiusy dohromady jako 150% zoom v prohlížeči.
+   Platí jen nad 1920px, takže 1920x1080/1920x1200 monitory (a užší) zůstávají netknuté; širší obrazovky dostanou vzhled "už zoomnuté" bez nutnosti zoomovat. */
 @media (min-width: 1921px) {
   html {
     font-size: 24px;
   }
 }
 
-/* Reskin react-h5-audio-player to match the brutalist mint theme.
-   !important throughout: the doc-viewer's stylesheet (imported for
-   docx/pptx/etc previews) lands in a later cascade layer/position and
-   would otherwise win over these plain rules. */
+/* Přestylování react-h5-audio-player, aby seděl s brutalist mint tématem.
+   !important všude: stylesheet doc-vieweru (pro docx/pptx náhledy) leží v pozdější cascade vrstvě a jinak by tato obyčejná pravidla přebil. */
 .rhap_container {
   background-color: transparent !important;
   box-shadow: none !important;

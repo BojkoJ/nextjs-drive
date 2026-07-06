@@ -22,10 +22,8 @@ export async function getAllParentsForFolder(folderId: number) {
       throw new Error("Folder not found");
     }
 
-    // Abychom zajistili správné pořadí, místo push použijeme unshift, protože push přidává na konec pole
-    // Pole parents by pak bylo opačně než jak chceme (root by byl poslední místo první atd)
-    // Unshift přidá na začátek pole, takže pořadí bude správnéS
-    // Šlo by použít .reverse(), ale to je bad practice, protože to vytvoří nové pole a je to zbytečně náročné na výkon
+    // Kvůli správnému pořadí použijeme unshift místo push, který by pole obrátil (root by byl poslední místo první).
+    // Unshift přidá na začátek pole, takže pořadí je správné - .reverse() by fungovalo taky, ale zbytečně by vytvořilo nové pole.
     parents.unshift(folder[0]);
     currentId = folder[0]?.parent;
   }
@@ -67,9 +65,8 @@ export async function GetFileById(fileId: number) {
   return file[0];
 }
 
-// Spočítá další volnou "order" hodnotu pro nově vytvořenou položku, aby se
-// nově vytvořené složky/soubory přidávaly na konec seznamu, ne na jeho začátek
-// (order sloupec má DB default 0, který by je jinak posunul mezi první položky).
+// Spočítá další volnou "order" hodnotu pro nově vytvořenou položku, aby se nově vytvořené složky/soubory přidávaly na konec seznamu, ne na začátek.
+// (order sloupec má DB default 0, který by je jinak posunul mezi první položky)
 export async function GetNextOrderValue(parentId: number, ownerId: string) {
   const [folders, files] = await Promise.all([
     db
@@ -91,16 +88,14 @@ export async function GetNextOrderValue(parentId: number, ownerId: string) {
 }
 
 // Sečte velikost všech souborů rekurzivně pro KAŽDOU z předaných složek najednou.
-// Jeden společný BFS průchod přes všechny podstromy: 2 dotazy na úroveň hloubky
-// celkem, místo 2 dotazů na úroveň za každou složku zvlášť (N+1 problém).
+// Jeden společný BFS průchod přes všechny podstromy: 2 dotazy na úroveň hloubky celkem, místo 2 dotazů na úroveň za každou složku zvlášť (N+1 problém).
 export async function GetFolderSizes(folderIds: number[]) {
   const totals: Record<number, number> = {};
   if (folderIds.length === 0) return totals;
 
   for (const id of folderIds) totals[id] = 0;
 
-  // Mapa: id složky v aktuální úrovni -> id kořenové složky (z folderIds),
-  // do jejíhož součtu se mají soubory pod ní započítat.
+  // Mapa: id složky v aktuální úrovni -> id kořenové složky (z folderIds), do jejíhož součtu se mají soubory pod ní započítat.
   let level = new Map<number, number>(folderIds.map((id) => [id, id]));
 
   while (level.size > 0) {

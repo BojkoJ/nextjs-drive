@@ -7,8 +7,7 @@ import { PendingLinkLabel } from "~/components/pending-link-label";
 import type { FolderDropTargetHandlers } from "~/hooks/use-drive-dnd";
 import type { folders_table } from "~/server/db/schema";
 
-// Breadcrumb navigace; každá úroveň je zároveň drop target, takže položky
-// jde přetáhnout přímo na nadřazenou složku.
+// Breadcrumb navigace; každá úroveň je zároveň drop target, takže položky jde přetáhnout přímo na nadřazenou složku.
 export function Breadcrumbs(props: {
   parents: (typeof folders_table.$inferSelect)[];
   rootFolderId: number | undefined;

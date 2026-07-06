@@ -18,8 +18,7 @@ type ConfirmState = {
   onConfirm: () => void;
 };
 
-// Celý delete flow driveu: confirm dialog, "mažu" stav řádků a samotné
-// spuštění server akce. onDeleted se volá po úspěchu (clear výběru + refresh).
+// Celý delete flow driveu: confirm dialog, "mažu" stav řádků a samotné spuštění server akce. onDeleted se volá po úspěchu (clear výběru + refresh).
 export function useDeleteFlow(onDeleted: () => void) {
   const [deletingKeys, setDeletingKeys] = useState<Set<string>>(new Set());
   const [isDeleteBusy, startDeleteTransition] = useTransition();

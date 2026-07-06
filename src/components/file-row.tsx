@@ -16,11 +16,8 @@ import { FileTypeIcon } from "~/lib/file-icons";
 import { formatFileSize } from "~/lib/format-size";
 import { AnimatedFolderIcon } from "./animated-folder-icon";
 
-// motion.li's types redefine onDragStart/onDragEnd for its own pointer-drag
-// gesture (PanInfo-based), which shadows the native HTML5 DnD callback shape
-// we actually want here. This cast is type-only: with no `drag` prop set on
-// the element, motion forwards these straight through as plain native
-// ondragstart/ondragend DOM listeners.
+// motion.li přetypovává onDragStart/onDragEnd pro svoje pointer-drag gesto (PanInfo), což zastiňuje nativní HTML5 DnD callbacky, které tu chceme.
+// Tento cast je jen typový: bez `drag` propu motion tyto handlery beze změny předá jako obyčejné nativní ondragstart/ondragend DOM listenery.
 function nativeDragHandler(
   handler: ((e: React.DragEvent) => void) | undefined,
 ) {
@@ -31,10 +28,8 @@ function nativeDragHandler(
 
 const LONG_NAME_THRESHOLD = 40;
 
-// Past the threshold, a name would otherwise spill past the Name column into
-// Type (row height is fixed, so wrapping and growing the row isn't an
-// option). Confines it to roughly one line's height with a vertical
-// scrollbar instead, so the full name is still reachable, just scrolled to.
+// Nad tímto prahem by název jinak přetekl ze sloupce Name do Type (výška řádku je pevná, zalamování/růst řádku nejde).
+// Místo toho ho omezíme na výšku zhruba jednoho řádku s vertikálním scrollbarem, takže celý název zůstává dostupný, jen odscrollovaný.
 function ScrollableName(props: { name: string }) {
   const isLong = props.name.length > LONG_NAME_THRESHOLD;
   return (
@@ -59,17 +54,14 @@ function DragHandle(props: {
       aria-hidden
       onMouseDown={props.onMouseDown}
       onMouseUp={props.onMouseUp}
-      // Native HTML5 drag-and-drop has no touch equivalent anyway, so the
-      // handle (and the width reserved for it) only shows up at sm+.
+      // Nativní HTML5 drag-and-drop stejně nemá touch ekvivalent, takže handle (a místo pro něj vyhrazené) se zobrazuje až od sm+.
       className="text-muted-foreground hidden h-4 w-4 shrink-0 cursor-grab active:cursor-grabbing sm:block"
     />
   );
 }
 
-// Native `draggable` on the row would let a drag start from anywhere on it.
-// To restrict dragging to this handle, the row keeps draggable=false until
-// this handle reports mousedown, and the row flips it back off on drag end
-// (a real drag happened) or this handle's own mouseup (just a click, no drag).
+// Nativní `draggable` na řádku by dovolil zahájit drag odkudkoliv. Aby šlo táhnout jen za handle, řádek drží draggable=false, dokud handle nenahlásí mousedown,
+// a zase ho vypne při dragend (proběhl skutečný drag) nebo mouseup přímo na handle (jen klik, žádný drag).
 function useDragArmed() {
   const [dragArmed, setDragArmed] = useState(false);
   return {
@@ -92,8 +84,7 @@ function rowClassName(opts: {
   ].join(" ");
 }
 
-// Sdílený edit mód řádku: input + potvrzovací/zrušící tlačítka nad useRename.
-// inputRef jde zvlášť (ne uvnitř rename objektu) kvůli react-hooks/refs pravidlu.
+// Sdílený edit mód řádku: input + potvrzovací/zrušící tlačítka nad useRename. inputRef jde zvlášť (ne uvnitř rename objektu) kvůli react-hooks/refs pravidlu.
 function RenameEditor({
   icon,
   rename,
@@ -179,15 +170,11 @@ function RowActions(props: {
   );
 }
 
-// memo(): řádek se překreslí jen když se změní jeho vlastní data/stav, ne při
-// každé změně výběru či drag stavu jinde v seznamu. Všechny callback props
-// proto musí být stabilní - berou identitu položky jako argument, místo aby
-// ji rodič zavíral do inline closure.
+// memo(): řádek se překreslí jen když se změní jeho vlastní data/stav, ne při každé změně výběru či drag stavu jinde v seznamu.
+// Všechny callback props proto musí být stabilní - berou identitu položky jako argument, místo aby ji rodič zavíral do inline closure.
 //
-// listIndex se v renderu nepoužívá - je tu jen proto, aby memo řádek
-// překreslil, když se změní jeho pozice v seznamu. Motion `layout` (FLIP)
-// animace přeuspořádání běží pouze při re-renderu, takže bez tohoto propu
-// by řádky po drag & drop reorderu na nové místo skočily bez animace.
+// listIndex se v renderu nepoužívá - je tu jen proto, aby memo řádek překreslil, když se změní jeho pozice v seznamu.
+// Motion `layout` (FLIP) animace přeuspořádání běží jen při re-renderu, takže bez tohoto propu by řádky po reorderu skočily na nové místo bez animace.
 export const FileRow = memo(function FileRow(props: {
   file: typeof files_table.$inferSelect;
   listIndex: number;
@@ -255,9 +242,7 @@ export const FileRow = memo(function FileRow(props: {
                 name={file.name}
                 className="mr-3 shrink-0 text-xl leading-none"
               />
-              {/* Render the just-saved local name, not the file.name prop:
-                  the prop only updates once the background refresh lands,
-                  which would otherwise flash the pre-rename name for a beat. */}
+              {/* Vykreslíme právě uložený lokální název, ne file.name prop - ten se aktualizuje až po doběhnutí refreshe na pozadí a jinak by na okamžik bleskl starý název. */}
               <ScrollableName name={rename.draft} />
             </Link>
           )}
@@ -293,8 +278,7 @@ function FolderLinkIcon(props: { isDropTarget?: boolean }) {
   );
 }
 
-// listIndex: viz komentář u FileRow - invaliduje memo při změně pozice,
-// aby proběhla motion layout animace přeuspořádání.
+// listIndex: viz komentář u FileRow - invaliduje memo při změně pozice, aby proběhla motion layout animace přeuspořádání.
 export const FolderRow = memo(function FolderRow(props: {
   folder: typeof folders_table.$inferSelect;
   size: number;
@@ -325,8 +309,7 @@ export const FolderRow = memo(function FolderRow(props: {
     inputRef,
   });
 
-  // Externě spuštěná editace (právě vytvořená složka): render-phase sync,
-  // ať se edit mód otevře bez čekání na efekt a input dostane serverový název.
+  // Externě spuštěná editace (právě vytvořená složka): render-phase sync, ať se edit mód otevře bez čekání na efekt a input dostane serverový název.
   const [prevIsEditing, setPrevIsEditing] = useState(isEditing);
   if (isEditing !== prevIsEditing) {
     setPrevIsEditing(isEditing);
@@ -383,9 +366,7 @@ export const FolderRow = memo(function FolderRow(props: {
               className="text-foreground hover:text-primary flex min-w-0 cursor-pointer items-center"
             >
               <FolderLinkIcon isDropTarget={props.isDropTarget} />
-              {/* Render the just-saved local name, not the folder.name prop:
-                  the prop only updates once the background refresh lands,
-                  which would otherwise flash the pre-rename name for a beat. */}
+              {/* Vykreslíme právě uložený lokální název, ne folder.name prop - ten se aktualizuje až po doběhnutí refreshe na pozadí a jinak by na okamžik bleskl starý název. */}
               <ScrollableName name={rename.draft} />
             </Link>
           )}

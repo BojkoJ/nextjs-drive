@@ -3,10 +3,8 @@
 import { Trash2Icon } from "lucide-react";
 import { Button } from "~/components/ui/button";
 
-// Lišta hromadných akcí nad seznamem. Real content is always mounted (never
-// conditionally removed), just made invisible when empty, so this slot's
-// natural height is always identical to its populated height and nothing
-// below it ever shifts.
+// Lišta hromadných akcí nad seznamem. Obsah je vždy vykreslený (nikdy podmíněně odstraněný), jen skrytý přes invisible, když je prázdný,
+// takže výška tohoto slotu je vždy stejná jako když je vyplněný a nic pod ním se neposouvá.
 export function SelectionBar(props: {
   selectedCount: number;
   onClear: () => void;

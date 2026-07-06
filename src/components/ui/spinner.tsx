@@ -1,9 +1,8 @@
 import { Loader2Icon } from "lucide-react";
 import { cn } from "~/lib/utils";
 
-// Prohlížeče často nemají hardwarovou akceleraci CSS animací přímo na SVG
-// elementech - proto se točí obalový span a SVG uvnitř zůstává statické.
-// Velikost se předává přes className (h-4 w-4 apod.), ikona ji vyplní.
+// Prohlížeče často nemají hardwarovou akceleraci CSS animací přímo na SVG elementech, proto se točí obalový span a SVG uvnitř zůstává statické.
+// Velikost se předává přes className (h-4 w-4 apod.), ikona ji jen vyplní.
 export function Spinner(props: { className?: string }) {
   return (
     <span

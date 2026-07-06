@@ -2,8 +2,7 @@
 
 import { Checkbox } from "~/components/ui/checkbox";
 
-// Hlavička seznamu: select-all checkbox + popisky sloupců. Sloupce kopírují
-// responzivní hybrid layout řádků (flex na mobilu, 12-col grid od sm).
+// Hlavička seznamu: select-all checkbox + popisky sloupců. Sloupce kopírují responzivní hybrid layout řádků (flex na mobilu, 12-col grid od sm).
 export function ListHeader(props: {
   allSelected: boolean;
   onToggleSelectAll: () => void;

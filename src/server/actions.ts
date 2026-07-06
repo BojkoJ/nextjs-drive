@@ -10,8 +10,7 @@ import { UTApi } from "uploadthing/server";
 
 const utApi = new UTApi();
 
-// Anotováno explicitně: bez toho by TS při kombinování více server akcí
-// (např. v ternárním výrazu) unii zjednodušil a "result.error" by přestalo typovat.
+// Anotováno explicitně: bez toho by TS při kombinování více server akcí (např. v ternárním výrazu) unii zjednodušil a "result.error" by přestalo typovat.
 export type ActionResult =
   | { error: string; success?: undefined }
   | { success: true; error?: undefined };
@@ -22,10 +21,8 @@ function extractFileKey(url: string) {
   return url.replace("https://49g2gpt71x.ufs.sh/f/", "");
 }
 
-// Idiomatická náhrada dřívějšího cookie triku (nastavení náhodné cookie):
-// revalidatePath v server akci zneplatní client router cache, takže navigace
-// i router.refresh() po akci dostanou čerstvá data. Scope "layout" záměrně
-// pokrývá celý strom - mutace ovlivňují i StorageMeter v root layoutu.
+// Idiomatická náhrada dřívějšího cookie triku (nastavení náhodné cookie): revalidatePath zneplatní client router cache, takže navigace i refresh dostanou čerstvá data.
+// Scope "layout" záměrně pokrývá celý strom - mutace ovlivňují i StorageMeter v root layoutu.
 function revalidateDrive() {
   revalidatePath("/", "layout");
 }
@@ -48,7 +45,7 @@ async function getOwnedFile(fileId: number, ownerId: string) {
   return file;
 }
 
-// Projde strom složek do hloubky (BFS) a vrátí id všech potomků (ne včetně samotné složky)
+// Projde strom složek do hloubky (BFS) a vrátí id všech potomků (ne včetně samotné složky).
 async function getDescendantFolderIds(folderId: number, ownerId: string) {
   const descendantIds: number[] = [];
   let currentLevel = [folderId];
@@ -73,8 +70,7 @@ async function getDescendantFolderIds(folderId: number, ownerId: string) {
   return descendantIds;
 }
 
-// Rozbalí vybrané složky na kompletní seznam id včetně všech podsložek,
-// s deduplikací překryvů (např. když je vybraná složka i její podsložka).
+// Rozbalí vybrané složky na kompletní seznam id včetně všech podsložek, s deduplikací překryvů (např. když je vybraná složka i její podsložka).
 async function collectFolderSubtreeIds(folderIds: number[], ownerId: string) {
   const descendantIdLists = await Promise.all(
     folderIds.map((id) => getDescendantFolderIds(id, ownerId)),
@@ -82,8 +78,7 @@ async function collectFolderSubtreeIds(folderIds: number[], ownerId: string) {
   return [...new Set([...folderIds, ...descendantIdLists.flat()])];
 }
 
-// Smaže dané soubory (řádky z DB) najednou: jeden batch do UploadThing API
-// a jeden DELETE dotaz. Ownership musí být ověřen volajícím.
+// Smaže dané soubory (řádky z DB) najednou: jeden batch do UploadThing API a jeden DELETE dotaz. Ownership musí být ověřen volajícím.
 async function deleteFileRecords(
   files: (typeof files_table.$inferSelect)[],
 ) {
@@ -181,7 +176,7 @@ export async function RenameFolder(
     return { error: "Folder not found." };
   }
 
-  // Check if a folder with the new name already exists in the same parent directory
+  // Zkontrolujeme, jestli složka s novým názvem už v tomtéž rodiči neexistuje.
   const parentCondition =
     folder.parent === null
       ? isNull(folders_table.parent)
@@ -297,10 +292,8 @@ export async function DeleteFolder(folderId: number): Promise<ActionResult> {
   return { success: true };
 }
 
-// Smaže více vybraných souborů/složek naráz (multi-select delete). Vše se
-// nejdřív zvaliduje, pak se maže dávkově: jeden batch pro UploadThing a jeden
-// DELETE na tabulku, místo sekvenčního mazání položku po položce. Překryvy
-// (vybraný soubor uvnitř vybrané složky, složka i její podsložka) se deduplikují.
+// Smaže více vybraných souborů/složek naráz (multi-select delete): vše se zvaliduje, pak se maže dávkově - jeden batch pro UploadThing a jeden DELETE na tabulku.
+// Překryvy (vybraný soubor uvnitř vybrané složky, složka i její podsložka) se deduplikují.
 export async function DeleteItems(items: DragItemRef[]): Promise<ActionResult> {
   const session = await auth();
   if (!session?.userId) {
@@ -382,8 +375,7 @@ export async function DeleteItems(items: DragItemRef[]): Promise<ActionResult> {
   return { success: true };
 }
 
-// Přesune jednu nebo více položek (souborů/složek) do cílové složky, volitelně
-// je vloží před konkrétní sourozeneckou položku (drag & drop reorder), jinak je připojí na konec.
+// Přesune jednu nebo více položek do cílové složky, volitelně před konkrétní sourozeneckou položku (drag & drop reorder), jinak na konec.
 export async function MoveItemsToPosition(
   items: DragItemRef[],
   targetParentId: number,
@@ -399,8 +391,7 @@ export async function MoveItemsToPosition(
     return { error: "Nothing to move." };
   }
 
-  // Kontrola cílové složky a validace všech přesouvaných položek jsou
-  // vzájemně nezávislé - běží paralelně místo jedné await smyčky za druhou.
+  // Kontrola cílové složky a validace všech přesouvaných položek jsou vzájemně nezávislé - běží paralelně místo jedné await smyčky za druhou.
   const [targetFolder, validationErrors] = await Promise.all([
     getOwnedFolder(targetParentId, ownerId),
     Promise.all(
@@ -482,10 +473,8 @@ export async function MoveItemsToPosition(
     (s) => !movedSet.has(`${s.type}-${s.id}`),
   );
 
-  // Resolve insertBefore's position against the ORIGINAL (unfiltered) list, then
-  // shift it left by however many moved items preceded it there. This keeps a
-  // drop right next to the dragged item's own old slot a true no-op, instead of
-  // insertBefore silently vanishing (filtered out) and falling back to "append at end".
+  // Pozici insertBefore vyřešíme vůči PŮVODNÍMU (nefiltrovanému) seznamu a pak ji posuneme doleva o počet přesouvaných položek, které v něm byly před ní.
+  // Drop hned vedle staré pozice tažené položky tak zůstane skutečné no-op, místo aby insertBefore tiše zmizel (odfiltrovaný) a spadli jsme na "přidat na konec".
   let insertIndex = siblings.length;
   if (insertBefore) {
     const originalIdx = originalCombined.findIndex(

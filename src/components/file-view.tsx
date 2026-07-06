@@ -182,8 +182,7 @@ export function FileView(props: { file: typeof files_table.$inferSelect }) {
                 onClick={handleCopyLink}
                 className="relative cursor-pointer overflow-hidden rounded-none border-2 text-xs font-bold tracking-wide uppercase"
               >
-                {/* Invisible reference reserves the button's width so it
-                    never resizes when the animated label below swaps text. */}
+                {/* Neviditelná reference rezervuje šířku tlačítka, aby se neměnila, když animovaný label pod ní přepne text. */}
                 <span className="invisible inline-flex items-center gap-2">
                   <CopyIcon className="h-4 w-4" />
                   Copy link

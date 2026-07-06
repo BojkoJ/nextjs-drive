@@ -6,8 +6,7 @@ import { motion } from "motion/react";
 const ACTIVE_HEIGHT = 56;
 const REST_HEIGHT = 10;
 
-// Callbacky berou index jako argument (místo closure per gap), takže rodič
-// může předávat stabilní funkce a memo() přeskočí re-render neaktivních gapů.
+// Callbacky berou index jako argument (místo closure per gap), takže rodič může předávat stabilní funkce a memo() přeskočí re-render neaktivních gapů.
 export const GapDropZone = memo(function GapDropZone(props: {
   index: number;
   isActive: boolean;

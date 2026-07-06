@@ -48,8 +48,7 @@ export const ourFileRouter = {
         throw new UploadThingError("Unauthorized");
       }
 
-      // Zkontrolujeme limit úložiště ještě před přenosem souborů (files zde
-      // obsahuje jen klientem deklarovaná jména/velikosti, žádná data zatím netekla)
+      // Zkontrolujeme limit úložiště ještě před přenosem souborů (files zde obsahuje jen klientem deklarovaná jména/velikosti, žádná data zatím netekla).
       const currentUsage = await GetUserStorageUsage(user.userId);
       const incomingSize = files.reduce((total, file) => total + file.size, 0);
 

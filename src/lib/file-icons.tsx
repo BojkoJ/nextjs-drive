@@ -35,9 +35,8 @@ const IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "webp"];
 const VIDEO_EXTENSIONS = ["mp4", "avi", "mov", "mkv"];
 const AUDIO_EXTENSIONS = ["mp3", "wav", "flac"];
 const PDF_EXTENSIONS = ["pdf"];
-// Handled by @iamjariwala/react-doc-viewer; docx renders inline, the rest
-// (doc/ppt/pptx/xls/xlsx/odt) render as download cards, csv/txt/rtf/html/md
-// get their own inline renderers. PDF stays on the browser-native <embed>.
+// Řeší @iamjariwala/react-doc-viewer; docx je inline, zbytek (doc/ppt/pptx/xls/xlsx/odt) jako download karty, csv/txt/rtf/html/md má vlastní rendery.
+// PDF zůstává na nativním <embed> prohlížeče.
 const DOC_VIEWER_EXTENSIONS = [
   "doc",
   "docx",
@@ -54,8 +53,7 @@ const DOC_VIEWER_EXTENSIONS = [
   "md",
 ];
 
-// Maps an extension to the Prism language identifier react-syntax-highlighter
-// expects (see AVAILABLE_LANGUAGES_PRISM.MD in that package).
+// Mapuje příponu na identifikátor jazyka pro Prism, který očekává react-syntax-highlighter (viz AVAILABLE_LANGUAGES_PRISM.MD v tom balíčku).
 const CODE_EXTENSION_LANGUAGE: Record<string, string> = {
   ts: "typescript",
   tsx: "tsx",

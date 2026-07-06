@@ -3,13 +3,10 @@
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
-// Sdílená inline-rename logika pro FileRow i FolderRow: drží rozepsaný název,
-// edit mód, ukládání přes server akci a klávesové zkratky (Enter/Escape).
-// inputRef vlastní komponenta a předává ho sem - vracet ref z hooku by
-// "nakazilo" celý návratový objekt pro react-hooks/refs lint pravidlo.
+// Sdílená inline-rename logika pro FileRow i FolderRow: drží rozepsaný název, edit mód, ukládání přes server akci a klávesové zkratky (Enter/Escape).
+// inputRef vlastní komponenta a předává ho sem - vracet ref z hooku by "nakazilo" celý návratový objekt pro react-hooks/refs pravidlo.
 export function useRename(opts: {
-  // Aktuální název ze serveru (props) - draft se s ním synchronizuje,
-  // ale nikdy ne během editace, aby se nepřepsalo, co uživatel píše.
+  // Aktuální název ze serveru (props) - draft se s ním synchronizuje, ale nikdy ne během editace, aby se nepřepsalo, co uživatel píše.
   name: string;
   initiallyEditing?: boolean;
   fallbackError: string;
@@ -38,10 +35,8 @@ export function useRename(opts: {
     }
   }, [isEditMode, inputRef]);
 
-  // resetDraft: true předepíše do inputu aktuální serverový název - používá
-  // se při externě spuštěné editaci (nově vytvořená složka). Kliknutí na
-  // tužku draft nechává, protože ten už je se serverem synchronizovaný
-  // (a po čerstvém rename může být novější než zatím nerefreshnutá props).
+  // resetDraft: true předepíše do inputu aktuální serverový název - používá se při externě spuštěné editaci (nově vytvořená složka).
+  // Kliknutí na tužku draft nechává, protože ten už je se serverem synchronizovaný (a po čerstvém rename může být novější než zatím nerefreshnutá props).
   const startEditing = (resetDraft = false) => {
     if (resetDraft) setDraft(opts.name);
     setIsEditMode(true);

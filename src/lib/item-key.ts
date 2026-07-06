@@ -1,7 +1,6 @@
 import type { DragItemRef } from "~/server/actions";
 
-// Jednotný stringový klíč "file-12" / "folder-7" pro položky driveu - používá
-// se pro React keys, Sety vybraných/mazaných položek a drag & drop payloady.
+// Jednotný stringový klíč "file-12" / "folder-7" pro položky driveu - používá se pro React keys, Sety vybraných/mazaných položek a drag & drop payloady.
 export function keyOf(type: "file" | "folder", id: number) {
   return `${type}-${id}`;
 }

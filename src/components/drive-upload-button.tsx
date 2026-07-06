@@ -5,10 +5,8 @@ import { toast } from "sonner";
 import { UploadButton } from "./uploadthing";
 import { isCodeFile } from "~/lib/file-icons";
 
-// Browsers assign specific "script" MIME types to source files based on extension
-// (.py -> text/x-python, .sh -> application/x-sh, .js -> text/javascript, etc).
-// UploadThing's ingest layer appears to reject uploads whose Content-Type looks like a script, while an unrecognized type
-// (e.g. .go, which browsers can't classify) sails through untouched.
+// Prohlížeče přiřazují zdrojovým souborům podle přípony konkrétní "script" MIME typy (.py -> text/x-python, .sh -> application/x-sh, .js -> text/javascript atd.).
+// UploadThing na vstupu zřejmě odmítá uploady, jejichž Content-Type vypadá jako skript, zatímco nerozpoznaný typ (např. .go) proklouzne bez problému.
 function normalizeCodeFileType(file: File): File {
   if (isCodeFile(file.name) && file.type !== "text/plain") {
     return new File([file], file.name, {
@@ -19,8 +17,7 @@ function normalizeCodeFileType(file: File): File {
   return file;
 }
 
-// Nastylovaný UploadThing button pro nahrávání do konkrétní složky,
-// včetně toastů a refreshe po dokončení. Plně samostatný - potřebuje jen id složky.
+// Nastylovaný UploadThing button pro nahrávání do konkrétní složky, včetně toastů a refreshe po dokončení. Plně samostatný - potřebuje jen id složky.
 export function DriveUploadButton(props: { folderId: number }) {
   const router = useRouter();
 

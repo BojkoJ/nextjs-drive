@@ -78,9 +78,7 @@ export default function DriveContent(props: {
     (parent) => parent.name === "root",
   )?.id;
 
-  // Computed unconditionally (before the early returns below) so the
-  // useOptimistic hook call that follows always runs in the same order,
-  // per the Rules of Hooks.
+  // Vypočítáno bezpodmínečně (před early returny níže), aby useOptimistic hook níž vždy běžel ve stejném pořadí (Rules of Hooks).
   const userFiles = props.files.filter(
     (file) => file.ownerId === userInfo.user?.id,
   );
@@ -156,9 +154,8 @@ export default function DriveContent(props: {
     insertBefore: DragItemRef | null,
   ) {
     startMoveTransition(async () => {
-      // Reflect the move instantly; the DB write can lag a beat behind,
-      // React reconciles optimisticItems back to real props once this
-      // transition (and the router.refresh() below) settles.
+      // Přesun se promítne okamžitě, zápis do DB může chvíli zaostávat.
+      // React sesouhlasí optimisticItems zpět na skutečné props, jakmile se tento transition (a router.refresh() níže) usadí.
       applyOptimisticAction({
         type: "move",
         movedRefs: items,
@@ -186,11 +183,8 @@ export default function DriveContent(props: {
     getDragPayload: (item) => {
       const key = keyOf(item.type, item.id);
       if (selectedKeys.size > 0 && selectedKeys.has(key)) {
-        // selectedKeys is a Set, so Array.from would yield checkbox-click
-        // order rather than the items' actual order in the folder. Deriving
-        // the list from optimisticItems (filter preserves source order)
-        // keeps the moved group's internal order intact regardless of the
-        // order they were selected in.
+        // selectedKeys je Set, takže Array.from by vrátil pořadí podle kliknutí na checkbox, ne skutečné pořadí položek ve složce.
+        // Odvození seznamu z optimisticItems (filter zachovává pořadí zdroje) proto udrží vnitřní pořadí přesouvané skupiny správné bez ohledu na pořadí výběru.
         return optimisticItems
           .filter((it) => selectedKeys.has(keyOf(it.type, it.data.id)))
           .map((it): DragItemRef => ({ id: it.data.id, type: it.type }));
@@ -281,9 +275,7 @@ export default function DriveContent(props: {
   function createFolder() {
     const tempId = -Date.now();
     startCreateTransition(async () => {
-      // Show an empty, already-editable row instantly instead of
-      // waiting on the round trip and then flashing "New Folder"
-      // into view right before the user starts typing over it.
+      // Rovnou ukážeme prázdný, editovatelný řádek - nečekáme na odpověď serveru a pak bleskneme "New Folder" těsně předtím, než ho uživatel začne přepisovat.
       applyOptimisticAction({ type: "createFolder", tempId });
       setEditingFolderId(tempId);
 
@@ -300,7 +292,7 @@ export default function DriveContent(props: {
 
   return (
     <div className="bg-background text-foreground min-h-screen p-4 sm:p-8">
-      {/* Off-screen element used only as a custom drag preview image for multi-item drags */}
+      {/* Mimo obrazovku - slouží jen jako vlastní obrázek pro drag preview u přesunu více položek najednou */}
       <div
         ref={dragBadgeRef}
         className="border-primary bg-card text-foreground pointer-events-none fixed -top-96 -left-96 border-2 px-3 py-2 font-mono text-sm font-bold whitespace-nowrap"
