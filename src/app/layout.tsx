@@ -3,15 +3,11 @@ import "~/styles/globals.css";
 import { type Metadata } from "next";
 
 import { Geist } from "next/font/google";
-import {
-  ClerkProvider,
-  Show,
-  SignInButton,
-  UserButton,
-} from "@clerk/nextjs";
+import { ClerkProvider, Show, UserButton } from "@clerk/nextjs";
 import { PostHogProvider } from "~/_providers/posthog-provider";
 import Link from "next/link";
-import { Button } from "~/components/ui/button";
+import { CookieBanner } from "~/components/cookie-banner";
+import { SignInWithConsent } from "~/components/privacy-consent-dialog";
 import { StorageMeter } from "~/components/storage-meter";
 import { Toaster } from "sonner";
 
@@ -51,19 +47,18 @@ export default function RootLayout({
                     <UserButton />
                   </Show>
                   <Show when="signed-out">
-                    <SignInButton forceRedirectUrl={"/drive"}>
-                      <Button
-                        variant="outline"
-                        className="cursor-pointer rounded-none border-2 text-xs font-bold tracking-wide uppercase"
-                      >
-                        Sign In
-                      </Button>
-                    </SignInButton>
+                    <SignInWithConsent
+                      variant="outline"
+                      className="cursor-pointer rounded-none border-2 text-xs font-bold tracking-wide uppercase"
+                    >
+                      Sign In
+                    </SignInWithConsent>
                   </Show>
                 </div>
               </div>
             </header>
             {children}
+            <CookieBanner />
             <Toaster
               theme="dark"
               position="bottom-right"

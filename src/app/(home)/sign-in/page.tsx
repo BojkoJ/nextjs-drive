@@ -1,5 +1,4 @@
-import { Button } from "~/components/ui/button";
-import { SignInButton } from "@clerk/nextjs";
+import { SignInWithConsent } from "~/components/privacy-consent-dialog";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
@@ -19,13 +18,12 @@ export default async function SignInPage() {
         Sign in to get to your files.
       </h1>
       <div className="mt-8">
-        <Button
-          asChild
+        <SignInWithConsent
           size="lg"
           className="cursor-pointer rounded-none border-2 border-primary bg-transparent px-8 py-6 text-base font-bold tracking-wide text-primary uppercase hover:bg-primary hover:text-primary-foreground"
         >
-          <SignInButton forceRedirectUrl={"/drive"} />
-        </Button>
+          Sign in
+        </SignInWithConsent>
       </div>
     </section>
   );

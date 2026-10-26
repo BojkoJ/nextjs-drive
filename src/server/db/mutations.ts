@@ -1,9 +1,11 @@
 import "server-only";
 
-import { eq } from "drizzle-orm";
+import { eq, lt } from "drizzle-orm";
 import { db } from "~/server/db";
 import { files_table as filesSchema } from "~/server/db/schema";
 import { folders_table as folderSchema } from "~/server/db/schema";
+import { consent_log_table as consentLogSchema } from "~/server/db/schema";
+import { CONSENT_LOG_RETENTION_YEARS } from "~/lib/legal";
 import { GetNextOrderValue } from "~/server/db/queries";
 
 export async function getFolderById(folderId: number) {
@@ -61,4 +63,24 @@ export async function OnboardUser(userId: string) {
   ]);
 
   return rootFolderId;
+}
+
+export async function logConsent(input: {
+  consentId: string;
+  type: "cookies" | "privacy";
+  granted: boolean;
+  policyVersion: string;
+  ipHash: string;
+}) {
+  await db.insert(consentLogSchema).values({
+    ...input,
+    granted: input.granted ? 1 : 0,
+  });
+
+  // záznamy starší než retenční lhůta mažeme průběžně, aby nebylo potřeba samostatný cron
+  const cutoff = new Date();
+  cutoff.setFullYear(cutoff.getFullYear() - CONSENT_LOG_RETENTION_YEARS);
+  await db
+    .delete(consentLogSchema)
+    .where(lt(consentLogSchema.created_at, cutoff));
 }

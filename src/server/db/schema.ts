@@ -5,6 +5,7 @@ import {
   singlestoreTableCreator,
   bigint,
   timestamp,
+  varchar,
 } from "drizzle-orm/singlestore-core";
 
 export const createTable = singlestoreTableCreator(
@@ -60,3 +61,28 @@ export const folders_table = createTable(
 );
 
 export type DB_FolderType = typeof folders_table.$inferSelect;
+
+// Anonymní log souhlasů – důkaz "předem prokazatelného souhlasu" (§ 89 odst. 3 zákona č. 127/2005 Sb., čl. 7(1) GDPR).
+// Neobsahuje žádné ID uživatele ani IP, jen náhodné consentId z prohlížeče a solený hash IP.
+export const consent_log_table = createTable(
+  "consent_log_table",
+  {
+    id: bigint("id", { mode: "number", unsigned: true })
+      .primaryKey()
+      .autoincrement(),
+    consentId: varchar("consent_id", { length: 36 }).notNull(),
+    type: varchar("type", { length: 16 }).notNull(), // "cookies" | "privacy"
+    granted: int("granted").notNull(), // 1 = souhlas, 0 = odmítnutí / odvolání
+    policyVersion: varchar("policy_version", { length: 32 }).notNull(),
+    ipHash: varchar("ip_hash", { length: 64 }).notNull(),
+    created_at: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => {
+    return [
+      // dohledání všech záznamů jednoho prohlížeče
+      index("consent_id_index").on(t.consentId),
+      // mazání starých záznamů
+      index("created_at_index").on(t.created_at),
+    ];
+  },
+);

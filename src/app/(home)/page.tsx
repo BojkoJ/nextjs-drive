@@ -1,6 +1,7 @@
 import { Button } from "~/components/ui/button";
 import { FilesMockPreview } from "~/components/files-mock-preview";
 import { SupportedFileTypes } from "~/components/supported-file-types";
+import { LegalLinks } from "~/components/legal-links";
 import { ArrowRight } from "lucide-react";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
@@ -27,7 +28,7 @@ export default async function HomePage() {
             <p className="text-muted-foreground max-w-xl text-lg leading-relaxed">
               Just a normal drive app for your files.
               <br />
-              No cookies, no spying on u, no crap.
+              Only the cookies it needs, no tracking unless you say so, no crap.
               <br />
               Upload, organize, enjoy calm UI, done.
               <br />
@@ -77,6 +78,8 @@ export default async function HomePage() {
 
       <div className="flex flex-col items-center justify-center gap-2 border-t border-gray-300 py-5 text-center text-xs text-gray-500 md:flex-row dark:border-gray-600/80 dark:text-gray-200">
         <span>© {year} bojko drive</span>
+        <span className="hidden opacity-30 md:inline">•</span>
+        <LegalLinks />
         <span className="hidden opacity-30 md:inline">•</span>
         <span>
           web made by{" "}

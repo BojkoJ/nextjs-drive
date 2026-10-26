@@ -13,6 +13,9 @@ export const env = createEnv({
     SINGLESTORE_HOST: z.string(),
     SINGLESTORE_PORT: z.string(),
     SINGLESTORE_DB_NAME: z.string(),
+
+    // Tajný klíč pro hashování IP v logu souhlasů (HMAC). Bez něj by šel hash IPv4 triviálně zpětně dopočítat.
+    CONSENT_HASH_SALT: z.string().min(16),
   },
 
   client: {
@@ -27,6 +30,7 @@ export const env = createEnv({
     SINGLESTORE_HOST: process.env.SINGLESTORE_HOST,
     SINGLESTORE_PORT: process.env.SINGLESTORE_PORT,
     SINGLESTORE_DB_NAME: process.env.SINGLESTORE_DB_NAME,
+    CONSENT_HASH_SALT: process.env.CONSENT_HASH_SALT,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
   },
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
