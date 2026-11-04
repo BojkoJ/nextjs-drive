@@ -8,6 +8,7 @@ import type { FolderDropTargetHandlers } from "~/hooks/use-drive-dnd";
 import type { folders_table } from "~/server/db/schema";
 
 // Breadcrumb navigace; každá úroveň je zároveň drop target, takže položky jde přetáhnout přímo na nadřazenou složku.
+// Tlačítko je přímo odkaz (asChild), ne <button> uvnitř <a> - jinak by měla každá úroveň dva tab stopy.
 export function Breadcrumbs(props: {
   parents: (typeof folders_table.$inferSelect)[];
   rootFolderId: number | undefined;
@@ -16,50 +17,65 @@ export function Breadcrumbs(props: {
 }) {
   const { rootFolderId, dropTarget } = props;
 
+  // Poslední zobrazená úroveň je aktuální stránka (root se nevykresluje jako samostatná úroveň, takže pak je aktuální "My Drive").
+  const visibleParents = props.parents.filter(
+    (parentFolder) => parentFolder.name !== "root",
+  );
+  const lastVisibleId = visibleParents.at(-1)?.id;
+
   return (
-    <div className="mb-6 flex items-center justify-between">
-      <div className="flex flex-wrap items-center">
-        <Link href={`/f/${rootFolderId}`}>
+    <nav aria-label="Breadcrumb" className="mb-6">
+      <ol className="flex flex-wrap items-center">
+        <li className="flex items-center">
           <Button
+            asChild
             variant="ghost"
-            {...(rootFolderId !== undefined
-              ? {
-                  onDragOver: (e: React.DragEvent) =>
-                    dropTarget.onDragOver(e, rootFolderId),
-                  onDragLeave: () => dropTarget.onDragLeave(rootFolderId),
-                  onDrop: (e: React.DragEvent) =>
-                    dropTarget.onDrop(e, rootFolderId),
-                }
-              : {})}
             className={`text-muted-foreground hover:text-foreground mr-2 cursor-pointer font-mono ${props.dragOverFolderId === rootFolderId ? "bg-primary/10 ring-primary ring-2" : ""}`}
           >
-            <PendingLinkLabel>My Drive</PendingLinkLabel>
+            <Link
+              href={`/f/${rootFolderId}`}
+              aria-current={lastVisibleId === undefined ? "page" : undefined}
+              {...(rootFolderId !== undefined
+                ? {
+                    onDragOver: (e: React.DragEvent) =>
+                      dropTarget.onDragOver(e, rootFolderId),
+                    onDragLeave: () => dropTarget.onDragLeave(rootFolderId),
+                    onDrop: (e: React.DragEvent) =>
+                      dropTarget.onDrop(e, rootFolderId),
+                  }
+                : {})}
+            >
+              <PendingLinkLabel>My Drive</PendingLinkLabel>
+            </Link>
           </Button>
-        </Link>
+        </li>
 
-        {props.parents.map((parentFolder) => {
-          if (parentFolder.name === "root") {
-            return null; // Root folder přeskakujeme
-          }
-
-          return (
-            <div key={parentFolder.id} className="flex items-center">
-              <ChevronRight className="text-muted-foreground h-4 w-4" />
-              <Link href={`/f/${parentFolder.id}`}>
-                <Button
-                  variant="ghost"
-                  onDragOver={(e) => dropTarget.onDragOver(e, parentFolder.id)}
-                  onDragLeave={() => dropTarget.onDragLeave(parentFolder.id)}
-                  onDrop={(e) => dropTarget.onDrop(e, parentFolder.id)}
-                  className={`text-muted-foreground hover:text-foreground cursor-pointer font-mono ${props.dragOverFolderId === parentFolder.id ? "bg-primary/10 ring-primary ring-2" : ""}`}
-                >
-                  <PendingLinkLabel>{parentFolder.name}</PendingLinkLabel>
-                </Button>
+        {visibleParents.map((parentFolder) => (
+          <li key={parentFolder.id} className="flex items-center">
+            <ChevronRight
+              aria-hidden
+              className="text-muted-foreground h-4 w-4"
+            />
+            <Button
+              asChild
+              variant="ghost"
+              className={`text-muted-foreground hover:text-foreground cursor-pointer font-mono ${props.dragOverFolderId === parentFolder.id ? "bg-primary/10 ring-primary ring-2" : ""}`}
+            >
+              <Link
+                href={`/f/${parentFolder.id}`}
+                aria-current={
+                  parentFolder.id === lastVisibleId ? "page" : undefined
+                }
+                onDragOver={(e) => dropTarget.onDragOver(e, parentFolder.id)}
+                onDragLeave={() => dropTarget.onDragLeave(parentFolder.id)}
+                onDrop={(e) => dropTarget.onDrop(e, parentFolder.id)}
+              >
+                <PendingLinkLabel>{parentFolder.name}</PendingLinkLabel>
               </Link>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+            </Button>
+          </li>
+        ))}
+      </ol>
+    </nav>
   );
 }

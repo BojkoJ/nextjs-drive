@@ -23,6 +23,7 @@ export const GapDropZone = memo(function GapDropZone(props: {
 
   return (
     <motion.li
+      aria-hidden
       layout
       transition={{ type: "spring", stiffness: 500, damping: 40 }}
       onDragOver={(e) => {
@@ -41,9 +42,9 @@ export const GapDropZone = memo(function GapDropZone(props: {
         transition={{ type: "spring", stiffness: 500, damping: 35 }}
         className={`overflow-hidden transition-colors ${
           props.isActive
-            ? "border-2 border-primary bg-primary/10"
+            ? "border-primary bg-primary/10 border-2"
             : props.isDragActive
-              ? "border-y border-border"
+              ? "border-border border-y"
               : "border-0"
         }`}
       />

@@ -6,3 +6,15 @@ allowBuilds:
   msgpackr-extract: true
   sharp: true
   unrs-resolver: true
+
+# Bezpečnostní overrides pro tranzitivní závislosti, které upstream balíček zatím nezvedl (viz `pnpm audit`).
+# Po vydání opravené verze upstreamu (uploadthing, drizzle-kit, drizzle-orm) je lze odebrat.
+overrides:
+  # uploadthing pinuje effect 3.17.7 (GHSA-38f7-945m-qr2g)
+  'effect@<3.20.0': '^3.20.0'
+  # drizzle-orm -> gel (optional) -> shell-quote (GHSA-pqg4-j6r4-53mv)
+  'shell-quote@<1.11.0': '^1.11.0'
+  # drizzle-kit -> @esbuild-kit/* -> esbuild 0.18 (GHSA-67mh-4wv8-2f99, jen dev nástroj)
+  'esbuild@<0.25.0': '^0.25.12'
+  # eslint a pluginy -> minimatch <11 (GHSA-g3hv-75wg-m249, jen dev nástroje)
+  'minimatch@<11.0.1': '^11.0.1'

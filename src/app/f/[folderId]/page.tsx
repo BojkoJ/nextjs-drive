@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { type Metadata } from "next";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 import DriveContent from "~/components/drive-content";
 
 import { Button } from "~/components/ui/button";
@@ -9,21 +12,24 @@ import {
   GetFolderSizes,
 } from "~/server/db/queries";
 
+export const metadata: Metadata = {
+  title: "My Drive",
+};
+
 function FolderNotFoundScreen() {
   return (
-    <div className="flex h-screen w-full flex-col items-center justify-center gap-y-5 bg-background text-foreground">
+    <div className="bg-background text-foreground flex h-screen w-full flex-col items-center justify-center gap-y-5">
       <p>
         <span className="font-semibold italic">Oooops... </span> You&apos;re
         looking for a folder that doesn&apos;t exist or has been deleted.
       </p>
-      <Link href="/">
-        <Button
-          variant="ghost"
-          className="mr-2 cursor-pointer border border-border text-muted-foreground hover:bg-accent hover:text-foreground"
-        >
-          Go back to Home
-        </Button>
-      </Link>
+      <Button
+        asChild
+        variant="ghost"
+        className="border-border text-muted-foreground hover:bg-accent hover:text-foreground mr-2 cursor-pointer border"
+      >
+        <Link href="/">Go back to Home</Link>
+      </Button>
     </div>
   );
 }
@@ -32,6 +38,12 @@ export default async function GoogleDriveClone(props: {
   params: Promise<{ folderId: string }>;
 }) {
   const params = await props.params;
+
+  // Data složky se načítají a posílají klientovi jen přihlášenému vlastníkovi - bez toho by šlo podle číselného id vyčíst cizí složky a odkazy na soubory.
+  const session = await auth();
+  if (!session.userId) {
+    return redirect("/sign-in");
+  }
 
   // Zajistíme, že folderId je číslo, jinak vrátíme error page
   const parsedFolderId = parseInt(params.folderId);
@@ -47,9 +59,9 @@ export default async function GoogleDriveClone(props: {
   try {
     // Počkáme na všechny Promisy paralelně místo sekvenčně - žádný dotaz nezávisí na výsledku jiného, takže čekáme jen na ten nejpomalejší.
     [folders, files, parents] = await Promise.all([
-      GetFolders(parsedFolderId),
-      GetFiles(parsedFolderId),
-      getAllParentsForFolder(parsedFolderId),
+      GetFolders(parsedFolderId, session.userId),
+      GetFiles(parsedFolderId, session.userId),
+      getAllParentsForFolder(parsedFolderId, session.userId),
     ]);
   } catch (err) {
     console.log(err);

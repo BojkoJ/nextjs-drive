@@ -7,19 +7,15 @@ import { files_table, folders_table } from "./db/schema";
 import { GetNextOrderValue } from "./db/queries";
 import { auth } from "@clerk/nextjs/server";
 import { UTApi } from "uploadthing/server";
+import { extractFileKey } from "~/lib/file-key";
 
 const utApi = new UTApi();
 
 // Anotováno explicitně: bez toho by TS při kombinování více server akcí (např. v ternárním výrazu) unii zjednodušil a "result.error" by přestalo typovat.
 export type ActionResult =
-  | { error: string; success?: undefined }
-  | { success: true; error?: undefined };
+  { error: string; success?: undefined } | { success: true; error?: undefined };
 
 export type DragItemRef = { id: number; type: "file" | "folder" };
-
-function extractFileKey(url: string) {
-  return url.replace("https://49g2gpt71x.ufs.sh/f/", "");
-}
 
 // Idiomatická náhrada dřívějšího cookie triku (nastavení náhodné cookie): revalidatePath zneplatní client router cache, takže navigace i refresh dostanou čerstvá data.
 // Scope "layout" záměrně pokrývá celý strom - mutace ovlivňují i StorageMeter v root layoutu.
@@ -79,9 +75,7 @@ async function collectFolderSubtreeIds(folderIds: number[], ownerId: string) {
 }
 
 // Smaže dané soubory (řádky z DB) najednou: jeden batch do UploadThing API a jeden DELETE dotaz. Ownership musí být ověřen volajícím.
-async function deleteFileRecords(
-  files: (typeof files_table.$inferSelect)[],
-) {
+async function deleteFileRecords(files: (typeof files_table.$inferSelect)[]) {
   if (files.length === 0) return;
   await utApi.deleteFiles(files.map((f) => extractFileKey(f.url)));
   await db.delete(files_table).where(
@@ -344,7 +338,9 @@ export async function DeleteItems(items: DragItemRef[]): Promise<ActionResult> {
   }
 
   const allFolderIds =
-    folderIds.length > 0 ? await collectFolderSubtreeIds(folderIds, ownerId) : [];
+    folderIds.length > 0
+      ? await collectFolderSubtreeIds(folderIds, ownerId)
+      : [];
 
   const filesInFolders =
     allFolderIds.length > 0
@@ -511,4 +507,34 @@ export async function MoveItemsToPosition(
   revalidateDrive();
 
   return { success: true };
+}
+
+export type MoveTargetFolder = {
+  id: number;
+  name: string;
+  parent: number | null;
+};
+
+// Všechny složky přihlášeného uživatele pro výběr cíle v dialogu "Move to…" - alternativa k drag & drop pro klávesnici a dotyk.
+// Samotné přesunutí dělá MoveItemsToPosition, které cíl i položky znovu ověřuje.
+export async function GetMoveTargets(): Promise<
+  | { folders: MoveTargetFolder[]; error?: undefined }
+  | { error: string; folders?: undefined }
+> {
+  const session = await auth();
+  if (!session?.userId) {
+    return { error: "Unauthorized" };
+  }
+
+  const folders = await db
+    .select({
+      id: folders_table.id,
+      name: folders_table.name,
+      parent: folders_table.parent,
+    })
+    .from(folders_table)
+    .where(eq(folders_table.ownerId, session.userId))
+    .orderBy(folders_table.order, folders_table.id);
+
+  return { folders };
 }

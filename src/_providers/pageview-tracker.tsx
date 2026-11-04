@@ -11,17 +11,17 @@ export default function PostHogPageView() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
-  // Trackuje identifikaci uživatele v PostHog - efekt se spouští při přihlášení nebo odhlášení a aktualizuje profil uživatele.
-  // Závislosti jsou primitivy (id, email), ne celý user objekt, takže se efekt nespouští při každé nesouvisející změně profilu.
+  // Trackuje identifikaci uživatele v PostHog - efekt se spouští při přihlášení nebo odhlášení.
+  // Posíláme jen pseudonymní Clerk ID, žádný e-mail ani jméno (minimalizace údajů, čl. 5(1)(c) GDPR).
+  // Závislost je primitiv (id), ne celý user objekt, takže se efekt nespouští při každé nesouvisející změně profilu.
   const userId = userInfo.user?.id;
-  const userEmail = userInfo.user?.emailAddresses[0]?.emailAddress;
   useEffect(() => {
     if (userId) {
-      posthog.identify(userId, { email: userEmail });
+      posthog.identify(userId);
     } else {
       posthog.reset();
     }
-  }, [posthog, userId, userEmail]);
+  }, [posthog, userId]);
 
   // Trackuje návštěvy stránek pomocí PostHog
   useEffect(() => {

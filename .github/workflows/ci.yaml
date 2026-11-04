@@ -1,23 +1,54 @@
 name: CI
 
-on: [push]
+on:
+  push:
+  pull_request:
+
+# Workflow nepotřebuje nic kromě čtení repozitáře (princip nejmenších oprávnění).
+permissions:
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Install Dependencies
-        run: npm install -g pnpm && pnpm install
+      - name: Setup pnpm
+        uses: pnpm/action-setup@9bbca1e9dc2902adb87e8780fe5c98796985a62d # v6.1.1
+        with:
+          version: 11.10.0
+          cache: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Copy .env.example files
         shell: bash
-        run: find . -type f -name ".env.example" -exec sh -c 'cp "$1" "${1%.*}"' _ {} \;
+        run: find . -type f -name ".env.example" -not -path "./node_modules/*" -exec sh -c 'cp "$1" "${1%.*}"' _ {} \;
 
       - name: Typecheck
         run: pnpm typecheck
 
       - name: Lint
         run: pnpm lint
+
+      # Selže při nalezení zranitelnosti závažnosti high nebo critical (včetně dev závislostí).
+      - name: Audit dependencies
+        run: pnpm audit --audit-level=high
+
+      # Seznam všech komponent (SBOM, CycloneDX) - dohledatelnost závislostí při vyhodnocování nových zranitelností.
+      - name: Generate SBOM
+        run: pnpm sbom --sbom-format cyclonedx --prod > sbom.cdx.json
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sbom
+          path: sbom.cdx.json

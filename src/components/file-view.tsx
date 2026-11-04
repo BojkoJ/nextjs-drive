@@ -9,6 +9,7 @@ import {
   CheckIcon,
   ChevronLeft,
   CopyIcon,
+  PencilIcon,
   Trash2Icon,
   XIcon,
 } from "lucide-react";
@@ -118,13 +119,15 @@ export function FileView(props: { file: typeof files_table.$inferSelect }) {
                         setIsEditingName(false);
                       }
                     }}
-                    className="border-border bg-input text-foreground focus:border-primary w-full max-w-md border px-2 py-1 font-mono text-xl focus:outline-none disabled:opacity-50"
+                    aria-label="File name"
+                    className="border-muted-foreground/60 bg-input text-foreground focus-visible:border-primary focus-visible:ring-ring w-full max-w-md border px-2 py-1 font-mono text-xl focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
                   />
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleSaveName}
                     disabled={isSaving}
+                    aria-label="Save name"
                     className="hover:bg-primary/20 hover:text-primary h-8 w-8 cursor-pointer p-0"
                   >
                     {isSaving ? (
@@ -141,19 +144,31 @@ export function FileView(props: { file: typeof files_table.$inferSelect }) {
                       setIsEditingName(false);
                     }}
                     disabled={isSaving}
+                    aria-label="Cancel renaming"
                     className="hover:bg-destructive/10 hover:text-destructive h-8 w-8 cursor-pointer p-0"
                   >
                     <XIcon className="h-4 w-4" />
                   </Button>
                 </>
               ) : (
-                <h1
-                  onClick={() => setIsEditingName(true)}
-                  className="text-foreground hover:text-primary cursor-pointer font-mono text-xl font-bold break-all"
-                  title="Click to rename"
-                >
-                  {file.name}
-                </h1>
+                <>
+                  <h1
+                    onClick={() => setIsEditingName(true)}
+                    className="text-foreground hover:text-primary cursor-pointer font-mono text-xl font-bold break-all"
+                  >
+                    {file.name}
+                  </h1>
+                  {/* Klik na nadpis zůstává pro myš; tlačítko je klávesnicová a čtečková cesta k téže akci */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsEditingName(true)}
+                    aria-label="Rename file"
+                    className="hover:bg-primary/10 hover:text-primary h-8 w-8 shrink-0 cursor-pointer p-0"
+                  >
+                    <PencilIcon className="h-4 w-4" />
+                  </Button>
+                </>
               )}
             </div>
 

@@ -21,13 +21,16 @@ export async function StorageMeter() {
 
   return (
     <div className="hidden w-40 flex-col gap-1.5 sm:flex">
-      <span className="font-mono text-[0.6875rem] tracking-wide text-muted-foreground">
-        <span className="font-bold text-foreground">
+      <span className="text-muted-foreground font-mono text-[0.6875rem] tracking-wide">
+        <span className="text-foreground font-bold">
           {remainingMB.toFixed(2)}
         </span>{" "}
         of {DRIVE_LIMIT_MB}MB free
       </span>
-      <div className="h-1.5 w-full overflow-hidden border border-border bg-muted">
+      <div
+        aria-hidden
+        className="border-border bg-muted h-1.5 w-full overflow-hidden border"
+      >
         <div
           className={`h-full transition-[width] duration-300 ${isNearLimit ? "bg-destructive" : "bg-primary"}`}
           style={{ width: `${usedPercent}%` }}

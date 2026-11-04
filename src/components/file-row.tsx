@@ -4,7 +4,13 @@ import Link, { useLinkStatus } from "next/link";
 import { memo, useRef, useState } from "react";
 import { motion } from "motion/react";
 
-import { CheckIcon, GripVerticalIcon, PencilIcon, Trash2Icon, XIcon } from "lucide-react";
+import {
+  CheckIcon,
+  GripVerticalIcon,
+  PencilIcon,
+  Trash2Icon,
+  XIcon,
+} from "lucide-react";
 import type { files_table, folders_table } from "~/server/db/schema";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
@@ -104,7 +110,8 @@ function RenameEditor({
         onChange={(e) => rename.setDraft(e.target.value)}
         onKeyDown={rename.handleKeyDown}
         disabled={rename.isSaving}
-        className="border-border bg-input text-foreground focus:border-primary w-2/3 border px-2 py-1 font-mono focus:outline-none disabled:opacity-50"
+        aria-label="New name"
+        className="border-muted-foreground/60 bg-input text-foreground focus-visible:border-primary focus-visible:ring-ring w-2/3 border px-2 py-1 font-mono focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
       />
       <div className="ml-2 flex gap-1">
         <Button
@@ -112,6 +119,7 @@ function RenameEditor({
           size="sm"
           onClick={rename.save}
           disabled={rename.isSaving}
+          aria-label="Save name"
           className="hover:bg-primary/20 hover:text-primary h-6 w-6 cursor-pointer p-0"
         >
           {rename.isSaving ? (
@@ -125,6 +133,7 @@ function RenameEditor({
           size="sm"
           onClick={rename.cancel}
           disabled={rename.isSaving}
+          aria-label="Cancel renaming"
           className="hover:bg-destructive/10 hover:text-destructive h-6 w-6 cursor-pointer p-0"
         >
           <XIcon className="h-3.5 w-3.5" />

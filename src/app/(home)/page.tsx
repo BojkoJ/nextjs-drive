@@ -1,7 +1,6 @@
 import { Button } from "~/components/ui/button";
 import { FilesMockPreview } from "~/components/files-mock-preview";
 import { SupportedFileTypes } from "~/components/supported-file-types";
-import { LegalLinks } from "~/components/legal-links";
 import { ArrowRight } from "lucide-react";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
@@ -9,8 +8,6 @@ import { redirect } from "next/navigation";
 export default async function HomePage() {
   const session = await auth();
   const isSignedIn = !!session.userId;
-
-  const year = new Date().getFullYear();
 
   return (
     <>
@@ -68,31 +65,13 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="hidden md:block">
+          <div aria-hidden className="hidden md:block">
             <FilesMockPreview />
           </div>
         </div>
       </section>
 
       <SupportedFileTypes />
-
-      <div className="flex flex-col items-center justify-center gap-2 border-t border-gray-300 py-5 text-center text-xs text-gray-500 md:flex-row dark:border-gray-600/80 dark:text-gray-200">
-        <span>© {year} bojko drive</span>
-        <span className="hidden opacity-30 md:inline">•</span>
-        <LegalLinks />
-        <span className="hidden opacity-30 md:inline">•</span>
-        <span>
-          web made by{" "}
-          <a
-            href="https://bojkoj.vercel.app/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-medium text-gray-500 hover:text-[#0580bf] dark:text-gray-400"
-          >
-            Jan Bojko
-          </a>
-        </span>
-      </div>
     </>
   );
 }

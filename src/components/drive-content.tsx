@@ -19,10 +19,12 @@ import { ConfirmDialog } from "~/components/confirm-dialog";
 import { GapDropZone } from "~/components/gap-drop-zone";
 import { FileRow, FolderRow } from "~/components/file-row";
 import { SelectionBar } from "~/components/selection-bar";
+import { MoveDialog } from "~/components/move-dialog";
+import { SignInWithConsent } from "~/components/privacy-consent-dialog";
 import { Breadcrumbs } from "~/components/breadcrumbs";
 import { ListHeader } from "~/components/list-header";
 import { DriveUploadButton } from "~/components/drive-upload-button";
-import { SignInButton, useUser } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useSelection } from "~/hooks/use-selection";
 import { useDeleteFlow } from "~/hooks/use-delete-flow";
@@ -58,6 +60,7 @@ export default function DriveContent(props: {
   const userInfo = useUser();
   const router = useRouter();
   const [editingFolderId, setEditingFolderId] = useState<number | null>(null);
+  const [isMoveOpen, setIsMoveOpen] = useState(false);
   const [isCreatingFolder, startCreateTransition] = useTransition();
   const [, startMoveTransition] = useTransition();
 
@@ -216,14 +219,12 @@ export default function DriveContent(props: {
         <p className="text-muted-foreground mb-6 text-lg">
           You must be signed in to view this page.
         </p>
-        <SignInButton mode="modal">
-          <Button
-            variant="outline"
-            className="border-primary text-primary hover:bg-primary hover:text-primary-foreground cursor-pointer rounded-none border-2 bg-transparent px-6 uppercase"
-          >
-            Sign In
-          </Button>
-        </SignInButton>
+        <SignInWithConsent
+          variant="outline"
+          className="border-primary text-primary hover:bg-primary hover:text-primary-foreground cursor-pointer rounded-none border-2 bg-transparent px-6 uppercase"
+        >
+          Sign In
+        </SignInWithConsent>
       </div>
     );
   }
@@ -240,14 +241,13 @@ export default function DriveContent(props: {
         <p className="text-muted-foreground mb-6 text-lg">
           You do not have permission to access this folder.
         </p>
-        <Link href="/">
-          <Button
-            variant="outline"
-            className="border-primary text-primary hover:bg-primary hover:text-primary-foreground cursor-pointer rounded-none border-2 bg-transparent px-6 uppercase"
-          >
-            Homepage
-          </Button>
-        </Link>
+        <Button
+          asChild
+          variant="outline"
+          className="border-primary text-primary hover:bg-primary hover:text-primary-foreground cursor-pointer rounded-none border-2 bg-transparent px-6 uppercase"
+        >
+          <Link href="/">Homepage</Link>
+        </Button>
       </div>
     );
   }
@@ -266,6 +266,19 @@ export default function DriveContent(props: {
             optimisticItems.map((item) => keyOf(item.type, item.data.id)),
           ),
     );
+  }
+
+  // Vybrané položky v pořadí, v jakém jsou ve složce (stejně jako u drag & drop), aby se zachovalo jejich vzájemné pořadí.
+  function getSelectedRefs(): DragItemRef[] {
+    return optimisticItems
+      .filter((item) => selectedKeys.has(keyOf(item.type, item.data.id)))
+      .map((item): DragItemRef => ({ id: item.data.id, type: item.type }));
+  }
+
+  function confirmMove(targetFolderId: number) {
+    const items = getSelectedRefs();
+    setIsMoveOpen(false);
+    if (items.length > 0) runMove(items, targetFolderId, null);
   }
 
   function requestDeleteSelected() {
@@ -307,10 +320,23 @@ export default function DriveContent(props: {
         onConfirm={() => deleteFlow.confirmState?.onConfirm()}
       />
 
+      <MoveDialog
+        open={isMoveOpen}
+        onOpenChange={setIsMoveOpen}
+        itemCount={selectedKeys.size}
+        currentFolderId={props.currentFolderId}
+        movingFolderIds={Array.from(selectedKeys)
+          .map(parseKey)
+          .filter((item) => item.type === "folder")
+          .map((item) => item.id)}
+        onConfirm={confirmMove}
+      />
+
       <div className="mx-auto max-w-6xl">
         <SelectionBar
           selectedCount={selectedKeys.size}
           onClear={clearSelection}
+          onMoveSelected={() => setIsMoveOpen(true)}
           onDeleteSelected={requestDeleteSelected}
         />
 

@@ -170,3 +170,20 @@
 .rhap_download-progress {
   background-color: var(--border) !important;
 }
+
+/* Respektuje systémové nastavení "omezit pohyb" (WCAG 2.3.3): zkrátí CSS animace a přechody (dialogy, přechody barev).
+   Motion animace řeší MotionConfig v layoutu. Spinner se záměrně točí dál - je to indikátor načítání, ne dekorace. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-spin {
+    animation-duration: 1s !important;
+    animation-iteration-count: infinite !important;
+  }
+}

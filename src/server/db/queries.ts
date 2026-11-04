@@ -7,8 +7,12 @@ import {
   folders_table as foldersSchema,
 } from "~/server/db/schema";
 
-// Funkce, která vrátí všechny rodiče složky (včetně samotné složky) - pro breadcrumb
-export async function getAllParentsForFolder(folderId: number) {
+// Funkce, která vrátí všechny rodiče složky (včetně samotné složky) - pro breadcrumb.
+// Dotaz je omezený na vlastníka: cizí nebo neexistující složka skončí výjimkou, takže se její data nikdy nedostanou do odpovědi.
+export async function getAllParentsForFolder(
+  folderId: number,
+  ownerId: string,
+) {
   const parents = [];
   let currentId: number | null = folderId;
 
@@ -16,7 +20,12 @@ export async function getAllParentsForFolder(folderId: number) {
     const folder = await db
       .selectDistinct()
       .from(foldersSchema)
-      .where(eq(foldersSchema.id, currentId));
+      .where(
+        and(
+          eq(foldersSchema.id, currentId),
+          eq(foldersSchema.ownerId, ownerId),
+        ),
+      );
 
     if (!folder[0]) {
       throw new Error("Folder not found");
@@ -41,19 +50,26 @@ export async function GetRootFolderForUser(userId: string) {
   return folder[0];
 }
 
-export function GetFolders(folderId: number) {
+export function GetFolders(folderId: number, ownerId: string) {
   return db
     .select()
     .from(foldersSchema)
-    .where(eq(foldersSchema.parent, folderId))
+    .where(
+      and(
+        eq(foldersSchema.parent, folderId),
+        eq(foldersSchema.ownerId, ownerId),
+      ),
+    )
     .orderBy(foldersSchema.order, foldersSchema.id);
 }
 
-export function GetFiles(folderId: number) {
+export function GetFiles(folderId: number, ownerId: string) {
   return db
     .select()
     .from(filesSchema)
-    .where(eq(filesSchema.parent, folderId))
+    .where(
+      and(eq(filesSchema.parent, folderId), eq(filesSchema.ownerId, ownerId)),
+    )
     .orderBy(filesSchema.order, filesSchema.id);
 }
 
@@ -73,7 +89,10 @@ export async function GetNextOrderValue(parentId: number, ownerId: string) {
       .select({ order: foldersSchema.order })
       .from(foldersSchema)
       .where(
-        and(eq(foldersSchema.parent, parentId), eq(foldersSchema.ownerId, ownerId)),
+        and(
+          eq(foldersSchema.parent, parentId),
+          eq(foldersSchema.ownerId, ownerId),
+        ),
       ),
     db
       .select({ order: filesSchema.order })
@@ -113,7 +132,8 @@ export async function GetFolderSizes(folderIds: number[]) {
 
     for (const file of files) {
       const rootId = level.get(file.parent);
-      if (rootId !== undefined) totals[rootId] = (totals[rootId] ?? 0) + file.size;
+      if (rootId !== undefined)
+        totals[rootId] = (totals[rootId] ?? 0) + file.size;
     }
 
     const nextLevel = new Map<number, number>();

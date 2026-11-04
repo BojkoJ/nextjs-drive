@@ -19,7 +19,7 @@ export function FilePreview(props: { name: string; url: string }) {
 
   if (isImageFile(name)) {
     return (
-      <div className="flex w-full items-center justify-center border border-border bg-background p-4">
+      <div className="border-border bg-background flex w-full items-center justify-center border p-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={url}
@@ -32,7 +32,7 @@ export function FilePreview(props: { name: string; url: string }) {
 
   if (isVideoFile(name)) {
     return (
-      <div className="flex w-full items-center justify-center border border-border bg-black">
+      <div className="border-border flex w-full items-center justify-center border bg-black">
         <video src={url} controls className="max-h-[70vh] w-full">
           <track kind="captions" />
         </video>
@@ -42,7 +42,7 @@ export function FilePreview(props: { name: string; url: string }) {
 
   if (isAudioFile(name)) {
     return (
-      <div className="w-full border border-border bg-background p-6">
+      <div className="border-border bg-background w-full border p-6">
         <AudioPlayer
           src={url}
           showJumpControls={false}
@@ -59,22 +59,27 @@ export function FilePreview(props: { name: string; url: string }) {
 
   if (isPdfFile(name)) {
     return (
-      <div className="h-[70vh] w-full border border-border bg-background">
-        <embed src={url} type="application/pdf" className="h-full w-full" />
+      <div className="border-border bg-background h-[70vh] w-full border">
+        <embed
+          src={url}
+          type="application/pdf"
+          title={`${name} (PDF preview)`}
+          className="h-full w-full"
+        />
       </div>
     );
   }
 
   if (isDocViewerFile(name)) {
     return (
-      <div className="h-[70vh] w-full border border-border bg-background">
+      <div className="border-border bg-background h-[70vh] w-full border">
         <DocumentViewer url={url} fileName={name} />
       </div>
     );
   }
 
   return (
-    <div className="flex h-56 w-full items-center justify-center border border-border bg-background">
+    <div className="border-border bg-background flex h-56 w-full items-center justify-center border">
       <FileTypeIcon name={name} className="text-8xl" />
     </div>
   );

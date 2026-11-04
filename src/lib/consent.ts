@@ -109,8 +109,21 @@ function setSettingsOpen(value: boolean) {
   settingsListeners.forEach((l) => l());
 }
 
+// Prvek, ze kterého uživatel lištu otevřel - po volbě se na něj vrací fokus (WCAG 2.4.3), jinak by klávesnicový uživatel skončil na začátku stránky.
+let returnFocusTo: HTMLElement | null = null;
+
 export function openCookieSettings() {
+  returnFocusTo =
+    document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
   setSettingsOpen(true);
+}
+
+function restoreFocus() {
+  const target = returnFocusTo;
+  returnFocusTo = null;
+  if (target?.isConnected) requestAnimationFrame(() => target.focus());
 }
 
 function subscribe(callback: () => void) {
@@ -160,11 +173,14 @@ export function useCookieConsent() {
     writeRaw(COOKIE_KEY, JSON.stringify(record));
     logConsent("cookies", value, String(COOKIE_CONSENT_VERSION));
     setSettingsOpen(false);
+    restoreFocus();
   }, []);
 
   return {
     hydrated,
     analytics,
+    // true, když lištu ručně znovu otevřel uživatel (ne když se ukázala sama při první návštěvě)
+    reopened: isOpen,
     // lišta je vidět, dokud uživatel nezvolí (nebo ji ručně neotevře z patičky)
     showBanner: hydrated && (analytics === null || isOpen),
     decide,
